@@ -36,8 +36,8 @@ app.use('/api', apiRouter);
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Fallback to index.html for SPA
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
+app.use((req, res) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
     res.sendFile(path.join(__dirname, '../public/index.html'));
   } else {
     res.status(404).json({ error: 'ENDPOINT_NOT_FOUND' });
