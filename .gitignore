@@ -1,0 +1,21 @@
+# Dependencias
+node_modules/
+
+# Base de datos SQLite y archivos temporales WAL/SHM
+data/*.sqlite*
+!data/.gitkeep
+
+# Variables de entorno
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Archivos del sistema operativo y editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

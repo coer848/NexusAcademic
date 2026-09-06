@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexusAcademic - Plataforma Integral & Asistencia QR Dinámica</title>
+  <meta name="description" content="Plataforma académica integral para gestión de estudiantes, docentes, asistencia con QR dinámico criptográfico, evaluaciones, calificaciones y auditoría inmutable.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Icons (FontAwesome 6) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- QR Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- jsQR for instant camera frame decoding -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Ambient background glow effects -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+  <div class="bg-glow bg-glow-3"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand" id="btnBrandHome">
+        <div class="brand-icon">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Nexus<span class="highlight">Academic</span></span>
+          <span class="brand-tag">ENTERPRISE v3.0</span>
+        </div>
+      </div>
+
+      <!-- Navigation Links (Dynamic by Role) -->
+      <nav class="nav-links" id="mainNavLinks">
+        <!-- Rendered dynamically -->
+      </nav>
+
+      <!-- Nav Actions (Clock, Status, User Menu) -->
+      <div class="nav-actions">
+        <div class="live-clock" id="liveClock">
+          <i class="fa-regular fa-clock"></i>
+          <span id="timeDisplay">00:00:00</span>
+        </div>
+
+        <div id="userProfileBadge" class="user-pill hidden">
+          <div class="user-avatar-mini" id="userAvatarText">AD</div>
+          <div class="user-pill-info">
+            <span class="user-pill-name" id="userPillName">Usuario</span>
+            <span class="user-pill-role" id="userPillRole">Rol</span>
+          </div>
+          <button class="btn-icon-logout" id="btnLogout" title="Cerrar Sesión">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Container -->
+  <main class="content-wrapper" id="appMain">
+    
+    <!-- ================= VIEW 1: AUTHENTICATION / LOGIN & REGISTER ================= -->
+    <section id="viewLogin" class="view-section active">
+      <div class="login-wrapper">
+        <div class="login-card glass-card">
+          
+          <!-- Auth Tabs Switcher: Login / Register -->
+          <div class="auth-tabs-toggle">
+            <button type="button" class="auth-toggle-btn active" id="btnAuthTabLogin">
+              <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+            </button>
+            <button type="button" class="auth-toggle-btn" id="btnAuthTabRegister">
+              <i class="fa-solid fa-user-plus"></i> Crear Cuenta
+            </button>
+          </div>
+
+          <!-- Form 1: Login Form -->
+          <div id="authLoginContainer">
+            <div class="login-header">
+              <div class="login-badge-icon">
+                <i class="fa-solid fa-shield-halved"></i>
+              </div>
+              <h2>Acceso a NexusAcademic</h2>
+              <p>Ingrese con sus credenciales institucionales seguras</p>
+            </div>
+
+            <form id="formLogin" class="login-form">
+              <div class="form-group">
+                <label for="inputEmail"><i class="fa-solid fa-envelope"></i> Correo Electrónico</label>
+                <input type="email" id="inputEmail" placeholder="ejemplo@nexus.edu" required autocomplete="email">
+              </div>
+
+              <div class="form-group">
+                <label for="inputPassword"><i class="fa-solid fa-lock"></i> Contraseña</label>
+                <div class="password-input-wrapper">
+                  <input type="password" id="inputPassword" placeholder="••••••••" required autocomplete="current-password">
+                  <button type="button" class="btn-toggle-password" id="btnTogglePassword">
+                    <i class="fa-regular fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block btn-lg" id="btnLoginSubmit">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i> Iniciar Sesión
+              </button>
+            </form>
+
+            <div class="auth-footer-help">
+              <span>¿No tienes una cuenta institucional?</span>
+              <button type="button" class="btn-link" id="btnSwitchToRegister">Registrarse aquí</button>
+            </div>
+          </div>
+
+          <!-- Form 2: Self Registration Form -->
+          <div id="authRegisterContainer" class="hidden">
+            <div class="login-header">
+              <div class="login-badge-icon">
+                <i class="fa-solid fa-user-plus"></i>
+              </div>
+              <h2>Registro Institucional</h2>
+              <p>Crea tu cuenta de Estudiante o Docente en la base de datos</p>
+            </div>
+
+            <form id="formRegister" class="login-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="regFirstName"><i class="fa-solid fa-user"></i> Nombre</label>
+                  <input type="text" id="regFirstName" placeholder="Ej. Camila" required>
+                </div>
+                <div class="form-group">
+                  <label for="regLastName">Apellido</label>
+                  <input type="text" id="regLastName" placeholder="Ej. Torres" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="regEmail"><i class="fa-solid fa-envelope"></i> Correo Electrónico</label>
+                <input type="email" id="regEmail" placeholder="usuario@nexus.edu" required>
+              </div>
+
+              <div class="form-group">
+                <label for="regPassword"><i class="fa-solid fa-lock"></i> Contraseña (mínimo 6 caracteres)</label>
+                <input type="password" id="regPassword" placeholder="••••••••" required minlength="6">
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="regRole"><i class="fa-solid fa-id-badge"></i> Rol</label>
+                  <select id="regRole" class="form-select">
+                    <option value="STUDENT">Estudiante (Alumno)</option>
+                    <option value="TEACHER">Docente (Profesor)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="regCode"><i class="fa-solid fa-hashtag"></i> Código / Matrícula</label>
+                  <input type="text" id="regCode" placeholder="Ej. EST-2026-99">
+                </div>
+              </div>
+
+              <div class="form-group" id="groupStudentFields">
+                <label for="regCareer"><i class="fa-solid fa-graduation-cap"></i> Carrera Universitaria</label>
+                <input type="text" id="regCareer" placeholder="Ej. Ingeniería de Sistemas" value="Ingeniería de Software">
+              </div>
+
+              <div class="form-group hidden" id="groupTeacherFields">
+                <label for="regDepartment"><i class="fa-solid fa-building-columns"></i> Departamento / Facultad</label>
+                <input type="text" id="regDepartment" placeholder="Ej. Ciencias Computacionales">
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block btn-lg" id="btnRegisterSubmit">
+                <i class="fa-solid fa-circle-check"></i> Registrar Cuenta y Acceder
+              </button>
+            </form>
+
+            <div class="auth-footer-help">
+              <span>¿Ya tienes una cuenta registrada?</span>
+              <button type="button" class="btn-link" id="btnSwitchToLogin">Iniciar Sesión</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 2: ADMIN DASHBOARD ================= -->
+    <section id="viewAdmin" class="view-section hidden">
+      <div class="section-header-flex">
+        <div>
+          <span class="badge-role admin"><i class="fa-solid fa-crown"></i> Panel de Administración</span>
+          <h1 class="view-title">Gestión Institucional & Asignación de Clases</h1>
+          <p class="view-subtitle">Supervisión integral de asignaturas, grupos de docentes, estudiantes y bitácora de auditoría.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-sm" id="btnRefreshAdminData">
+            <i class="fa-solid fa-rotate"></i> Actualizar Datos
+          </button>
+        </div>
+      </div>
+
+      <!-- Admin Metrics Cards Grid -->
+      <div class="metrics-grid" id="adminMetricsGrid">
+        <div class="metric-card glass-card">
+          <div class="metric-icon blue"><i class="fa-solid fa-user-graduate"></i></div>
+          <div class="metric-data">
+            <span class="metric-label">Estudiantes</span>
+            <h3 class="metric-value" id="statAdminStudents">-</h3>
+            <span class="metric-tag">Matriculados activos</span>
+          </div>
+        </div>
+
+        <div class="metric-card glass-card">
+          <div class="metric-icon purple"><i class="fa-solid fa-chalkboard-user"></i></div>
+          <div class="metric-data">
+            <span class="metric-label">Docentes</span>
+            <h3 class="metric-value" id="statAdminTeachers">-</h3>
+            <span class="metric-tag">Cuerpo Académico</span>
+          </div>
+        </div>
+
+        <div class="metric-card glass-card">
+          <div class="metric-icon green"><i class="fa-solid fa-qrcode"></i></div>
+          <div class="metric-data">
+            <span class="metric-label">Asistencias QR</span>
+            <h3 class="metric-value" id="statAdminAttendances">-</h3>
+            <span class="metric-tag">Registradas con éxito</span>
+          </div>
+        </div>
+
+        <div class="metric-card glass-card">
+          <div class="metric-icon yellow"><i class="fa-solid fa-clipboard-check"></i></div>
+          <div class="metric-data">
+            <span class="metric-label">Calificaciones</span>
+            <h3 class="metric-value" id="statAdminGrades">-</h3>
+            <span class="metric-tag" id="statAdminGradeChanges">- cambios auditados</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Tabs Navigation -->
+      <div class="tabs-nav-bar">
+        <button class="tab-btn active" data-tab="tabAdminGroups"><i class="fa-solid fa-book-open"></i> Grupos y Asignación Docente</button>
+        <button class="tab-btn" data-tab="tabAdminTeachers"><i class="fa-solid fa-chalkboard-user"></i> Gestión de Profesores</button>
+        <button class="tab-btn" data-tab="tabAdminSubjects"><i class="fa-solid fa-cubes"></i> Asignaturas</button>
+        <button class="tab-btn" data-tab="tabAdminUsers"><i class="fa-solid fa-users"></i> Estudiantes</button>
+        <button class="tab-btn" data-tab="tabAdminAudit"><i class="fa-solid fa-shield-virus"></i> Bitácora de Auditoría</button>
+        <button class="tab-btn" data-tab="tabAdminGradeHistory"><i class="fa-solid fa-history"></i> Historial de Notas</button>
+      </div>
+
+      <!-- Tab Content 1: Groups -->
+      <div id="tabAdminGroups" class="tab-panel active">
+        <div class="panel-header-actions">
+          <div>
+            <h3>Grupos Académicos y Clases Asignadas</h3>
+            <p class="subtitle-text">Administra a qué profesor le corresponde cada asignatura, horarios y aulas.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btnModalNewGroup">
+            <i class="fa-solid fa-plus"></i> Crear Nuevo Grupo / Clase
+          </button>
+        </div>
+        <div class="table-container glass-card">
+          <table class="academic-table" id="tableAdminGroups">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Asignatura</th>
+                <th>Profesor Asignado</th>
+                <th>Horario & Aula</th>
+                <th>Alumnos</th>
+                <th>Sesiones</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab Content 2: Teachers -->
+      <div id="tabAdminTeachers" class="tab-panel hidden">
+        <div class="panel-header-actions">
+          <div>
+            <h3>Cuerpo Docente</h3>
+            <p class="subtitle-text">Modifica datos del docente, departamentos o especialidades.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btnModalNewTeacher">
+            <i class="fa-solid fa-user-plus"></i> Registrar Nuevo Profesor
+          </button>
+        </div>
+        <div class="table-container glass-card">
+          <table class="academic-table" id="tableAdminTeachers">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Profesor</th>
+                <th>Correo</th>
+                <th>Departamento / Facultad</th>
+                <th>Especialidad</th>
+                <th>Clases a Cargo</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab Content 3: Subjects -->
+      <div id="tabAdminSubjects" class="tab-panel hidden">
+        <div class="panel-header-actions">
+          <div>
+            <h3>Catálogo de Asignaturas</h3>
+            <p class="subtitle-text">Planes de estudio y asignaturas institucionales.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btnModalNewSubject">
+            <i class="fa-solid fa-plus"></i> Nueva Asignatura
+          </button>
+        </div>
+        <div class="table-container glass-card">
+          <table class="academic-table" id="tableAdminSubjects">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Créditos</th>
+                <th>Descripción</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab Content 4: Students -->
+      <div id="tabAdminUsers" class="tab-panel hidden">
+        <div class="panel-header-actions">
+          <div>
+            <h3>Estudiantes Matriculados</h3>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btnModalNewEnrollment">
+            <i class="fa-solid fa-user-plus"></i> Matricular Alumno en Grupo
+          </button>
+        </div>
+        <div class="table-container glass-card">
+          <table class="academic-table" id="tableAdminUsers">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Carrera</th>
+                <th>Semestre</th>
+                <th>Cursos Matriculados</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab Content 5: Audit Logs -->
+      <div id="tabAdminAudit" class="tab-panel hidden">
+        <div class="panel-header-actions">
+          <h3>Bitácora Global de Eventos y Seguridad</h3>
+        </div>
+        <div class="table-container glass-card">
+          <table class="academic-table" id="tableAdminAudit">
+            <thead>
+              <tr>
+                <th>Fecha y Hora</th>
+                <th>Usuario</th>
+                <th>Acción</th>
+                <th>Recurso</th>
+                <th>Detalles</th>
+                <th>IP</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab Content 6: Grade History -->
+      <div id="tabAdminGradeHistory" class="tab-panel hidden">
+        <div class="panel-header-actions">
+          <h3>Registro Inmutable de Modificaciones de Calificaciones</h3>
+        </div>
+        <div class="table-container glass-card">
+          <table class="academic-table" id="tableAdminGradeHistory">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Estudiante</th>
+                <th>Asignatura & Eval</th>
+                <th>Nota Anterior</th>
+                <th>Nueva Nota</th>
+                <th>Modificado Por</th>
+                <th>Motivo del Cambio</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 3: TEACHER DASHBOARD ================= -->
+    <section id="viewTeacher" class="view-section hidden">
+      <div class="section-header-flex">
+        <div>
+          <span class="badge-role teacher"><i class="fa-solid fa-chalkboard-user"></i> Portal Docente</span>
+          <h1 class="view-title" id="teacherGreeting">Mis Clases Asignadas</h1>
+          <p class="view-subtitle">Gestión de sesiones, proyección de QR dinámico, registro de actividades y libro de calificaciones.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary btn-sm" id="btnTeacherOpenCreateCourse">
+            <i class="fa-solid fa-plus-circle"></i> Crear Mi Asignatura / Clase
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btnRefreshTeacherData">
+            <i class="fa-solid fa-rotate"></i> Actualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- Teacher Group Selector & Active Class Banner -->
+      <div class="teacher-group-selector-box glass-card">
+        <div class="group-select-inline">
+          <label for="selectTeacherGroup"><i class="fa-solid fa-layer-group"></i> Asignatura / Clase:</label>
+          <select id="selectTeacherGroup" class="form-select"></select>
+          <button class="btn btn-sm btn-glass" id="btnTeacherEditCurrentCourse" title="Editar Nombre, Horario o Aula de esta Clase">
+            <i class="fa-solid fa-pen"></i> Editar
+          </button>
+          <button class="btn btn-sm btn-glass text-danger" id="btnTeacherDeleteCurrentCourse" title="Eliminar Esta Asignatura / Grupo">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+        <div class="group-quick-info" id="groupQuickInfo">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Teacher Tabs Navigation -->
+      <div class="tabs-nav-bar">
+        <button class="tab-btn active" data-tab="tabTeacherAttendance"><i class="fa-solid fa-qrcode"></i> Sesión & Asistencia QR</button>
+        <button class="tab-btn" data-tab="tabTeacherGrades"><i class="fa-solid fa-calculator"></i> Libro de Calificaciones</button>
+        <button class="tab-btn" data-tab="tabTeacherEvaluations"><i class="fa-solid fa-list-check"></i> Actividades & Evaluaciones</button>
+        <button class="tab-btn" data-tab="tabTeacherGradeHistory"><i class="fa-solid fa-clock-rotate-left"></i> Historial Auditado</button>
+      </div>
+
+      <!-- Tab Content 1: QR & Attendance Live Monitor -->
+      <div id="tabTeacherAttendance" class="tab-panel active">
+        <div class="attendance-workspace-grid">
+          
+          <!-- Left: Session Controller & Dynamic QR Display -->
+          <div class="qr-session-card glass-card">
+            <div class="card-header">
+              <div class="header-title">
+                <i class="fa-solid fa-qrcode"></i>
+                <h3>Control de Sesión de Clase</h3>
+              </div>
+              <span id="sessionStatusBadge" class="status-badge closed">
+                <span class="status-dot"></span>
+                <span id="sessionStatusText">SIN SESIÓN ACTIVA</span>
+              </span>
+            </div>
+
+            <div class="session-form-controls" id="sessionInactiveControls">
+              <div class="form-group">
+                <label for="inputSessionTopic"><i class="fa-solid fa-heading"></i> Tema de la Clase / Sesión</label>
+                <input type="text" id="inputSessionTopic" placeholder="Ej. Patrones de Diseño & Criptografía..." value="Sesión de Clase en Vivo">
+              </div>
+              <button class="btn btn-primary btn-block btn-lg" id="btnStartSession">
+                <i class="fa-solid fa-play"></i> Iniciar Sesión y Proyectar QR
+              </button>
+            </div>
+
+            <!-- Active QR Stage (Shown when session is active) -->
+            <div class="active-qr-stage hidden" id="activeQRStage">
+              <div class="qr-frame-wrapper" id="qrFrameWrapper" title="Haga clic para proyectar en Pantalla Completa / Modo Aula">
+                <div class="qr-canvas-box" id="qrCanvasBox">
+                  <div id="dynamicQRElement"></div>
+                </div>
+                <div class="qr-countdown-badge">
+                  <i class="fa-solid fa-arrows-rotate fa-spin"></i>
+                  <span>Rotación automática en: <strong id="qrCountdownSeconds">20</strong>s</span>
+                </div>
+              </div>
+
+              <div class="qr-payload-details">
+                <div class="detail-row">
+                  <span class="label">Tema:</span>
+                  <strong id="activeTopicLabel">-</strong>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Token Nonce:</span>
+                  <code id="activeNonceLabel">00000000</code>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Firma HMAC:</span>
+                  <code id="activeSignatureLabel">SHA-256 Validada</code>
+                </div>
+              </div>
+
+              <div class="session-active-actions">
+                <button class="btn btn-primary btn-block btn-lg" id="btnMaximizeQR">
+                  <i class="fa-solid fa-expand"></i> Agrandar QR / Modo Proyector
+                </button>
+                <button class="btn btn-danger btn-block" id="btnCloseSession">
+                  <i class="fa-solid fa-stop"></i> Finalizar y Cerrar Sesión
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Live Attendance Roster -->
+          <div class="attendance-roster-card glass-card">
+            <div class="card-header">
+              <div class="header-title">
+                <i class="fa-solid fa-users-viewfinder"></i>
+                <h3>Monitor de Asistencia en Vivo</h3>
+              </div>
+              <div class="attendance-counter-badge">
+                <span id="counterPresent">0</span> / <span id="counterTotal">0</span> Presentes (<span id="counterPercent">0%</span>)
+              </div>
+            </div>
+
+            <div class="roster-table-wrapper">
+              <table class="academic-table compact" id="tableSessionAttendance">
+                <thead>
+                  <tr>
+                    <th>Estudiante</th>
+                    <th>Código</th>
+                    <th>Hora</th>
+                    <th>Estado</th>
+                    <th>Verificación</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodySessionAttendance">
+                  <tr>
+                    <td colspan="5" class="empty-state-cell">Inicie una sesión para monitorear asistencia en tiempo real.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content 2: Gradebook Matrix -->
+      <div id="tabTeacherGrades" class="tab-panel hidden">
+        <div class="panel-header-actions">
+          <div>
+            <h3>Libro de Calificaciones y Matriz Ponderada</h3>
+            <p class="subtitle-text">Ingresa o edita notas (0.0 a 5.0). Haz clic en cualquier nota para calificar con motivo auditado.</p>
+          </div>
+          <div class="actions-group">
+            <button class="btn btn-secondary btn-sm" id="btnExportGradesCSV">
+              <i class="fa-solid fa-file-csv"></i> Exportar CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container glass-card" id="gradebookContainer">
+          <table class="gradebook-table" id="tableGradebookMatrix">
+            <thead id="theadGradebook"></thead>
+            <tbody id="tbodyGradebook"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab Content 3: Evaluations & Activities -->
+      <div id="tabTeacherEvaluations" class="tab-panel hidden">
+        <div class="panel-header-actions">
+          <div>
+            <h3>Plan de Actividades y Evaluaciones</h3>
+            <p class="subtitle-text">Ponderación acumulada: <strong id="totalWeightBadge">0% / 100%</strong></p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btnModalNewEvaluation">
+            <i class="fa-solid fa-plus"></i> Crear Nueva Actividad / Evaluación
+          </button>
+        </div>
+
+        <div class="table-container glass-card">
+          <table class="academic-table" id="tableTeacherEvaluations">
+            <thead>
+              <tr>
+                <th>Nombre de la Actividad</th>
+                <th>Tipo</th>
+                <th>Ponderación</th>
+                <th>Nota Máxima</th>
+                <th>Fecha Límite</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab Content 4: Teacher Grade History -->
+      <div id="tabTeacherGradeHistory" class="tab-panel hidden">
+        <div class="panel-header-actions">
+          <h3>Historial Auditado de Calificaciones en Mis Grupos</h3>
+        </div>
+        <div class="table-container glass-card">
+          <table class="academic-table" id="tableTeacherGradeHistory">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Estudiante</th>
+                <th>Evaluación</th>
+                <th>Nota Anterior</th>
+                <th>Nueva Nota</th>
+                <th>Motivo del Cambio</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 4: STUDENT DASHBOARD ================= -->
+    <section id="viewStudent" class="view-section hidden">
+      <div class="section-header-flex">
+        <div>
+          <span class="badge-role student"><i class="fa-solid fa-graduation-cap"></i> Portal Estudiante</span>
+          <h1 class="view-title" id="studentGreeting">Mi Récord Académico</h1>
+          <p class="view-subtitle">Registro de asistencia con cámara QR, consulta de notas y cálculo de promedio ponderado.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-sm" id="btnRefreshStudentData">
+            <i class="fa-solid fa-rotate"></i> Actualizar Notas
+          </button>
+        </div>
+      </div>
+
+      <!-- Student Tabs Navigation -->
+      <div class="tabs-nav-bar">
+        <button class="tab-btn active" data-tab="tabStudentScanner"><i class="fa-solid fa-camera"></i> Escáner de Asistencia QR</button>
+        <button class="tab-btn" data-tab="tabStudentGrades"><i class="fa-solid fa-award"></i> Mis Calificaciones & Promedios</button>
+        <button class="tab-btn" data-tab="tabStudentEnrollment"><i class="fa-solid fa-plus-circle"></i> Matricular Asignaturas</button>
+        <button class="tab-btn" data-tab="tabStudentAttendanceHistory"><i class="fa-solid fa-calendar-check"></i> Historial de Asistencia</button>
+      </div>
+
+      <!-- Tab Content 1: Scanner with Real Camera Feed -->
+      <div id="tabStudentScanner" class="tab-panel active">
+        <div class="scanner-grid-layout">
+          
+          <!-- Scanner Camera Card -->
+          <div class="scanner-card glass-card">
+            <div class="card-header">
+              <div class="header-title">
+                <i class="fa-solid fa-camera-retro"></i>
+                <h3>Cámara de Escaneo de Asistencia</h3>
+              </div>
+              <span id="cameraStatusBadge" class="status-badge closed">
+                <span class="status-dot"></span>
+                <span id="cameraStatusText">CÁMARA APAGADA</span>
+              </span>
+            </div>
+
+            <div class="scanner-viewport-box">
+              <!-- Live Video Feed -->
+              <video id="scannerVideo" playsinline autoplay muted class="camera-video-feed"></video>
+              <canvas id="scannerCanvas" class="hidden"></canvas>
+              
+              <div class="scanner-viewfinder-overlay" id="scannerOverlay">
+                <div class="corner top-left"></div>
+                <div class="corner top-right"></div>
+                <div class="corner bottom-left"></div>
+                <div class="corner bottom-right"></div>
+                <div class="laser-beam" id="scannerLaser"></div>
+              </div>
+
+              <!-- In-scanner Success/Error Notification Banner -->
+              <div class="scanner-notification-pill" id="scannerNotificationPill">
+                <i class="fa-solid fa-circle-check"></i>
+                <span id="scannerNotifText">¡Asistencia registrada con éxito!</span>
+              </div>
+            </div>
+
+            <div class="scanner-actions-bar">
+              <button class="btn btn-primary" id="btnStartCamera">
+                <i class="fa-solid fa-camera"></i> Activar Cámara
+              </button>
+              <button class="btn btn-glass" id="btnStopCamera">
+                <i class="fa-solid fa-video-slash"></i> Apagar
+              </button>
+            </div>
+          </div>
+
+          <!-- Direct / Simulated Scan Box -->
+          <div class="scanner-fallback-card glass-card">
+            <div class="card-header">
+              <div class="header-title">
+                <i class="fa-solid fa-bolt"></i>
+                <h3>Escaneo Directo de Clase Activa</h3>
+              </div>
+              <span class="badge-pill">Firma Criptográfica</span>
+            </div>
+
+            <p class="guide-text">
+              Si estás en el aula virtual o deseas registrar la asistencia directamente de tu clase activa:
+            </p>
+
+            <div class="simulation-actions-box">
+              <button class="btn btn-primary btn-block btn-lg" id="btnSimulateScan">
+                <i class="fa-solid fa-qrcode"></i> Registrar Asistencia de Mi Clase Activa
+              </button>
+            </div>
+
+            <div class="manual-json-input-box">
+              <label for="inputManualQRPayload"><i class="fa-solid fa-code"></i> O pegar token/payload QR firmado:</label>
+              <textarea id="inputManualQRPayload" rows="2" placeholder='{"sessionId":1,"nonce":"...","timestamp":17...}'></textarea>
+              <button class="btn btn-secondary btn-block btn-sm" id="btnSubmitManualPayload">
+                <i class="fa-solid fa-check"></i> Procesar Token Manual
+              </button>
+            </div>
+
+            <div class="telemetry-info-box">
+              <div class="info-item">
+                <i class="fa-solid fa-location-dot"></i>
+                <span>Geolocalización: <strong id="geoStatusText">Coordenadas del aula detectadas</strong></span>
+              </div>
+              <div class="info-item">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>Anti-Replay: <strong>Token de un solo uso validado por el servidor</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content 2: Student Grades & Averages -->
+      <div id="tabStudentGrades" class="tab-panel hidden">
+        <div id="studentCoursesGradesList" class="courses-grades-list">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Tab Content 3: Student Self-Enrollment into Classes -->
+      <div id="tabStudentEnrollment" class="tab-panel hidden">
+        <div class="panel-header-actions">
+          <div>
+            <h3>Catálogo de Asignaturas Disponibles</h3>
+            <p class="subtitle-text">Explora las materias creadas por los profesores y matricúlate con un solo clic.</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btnRefreshAvailableCourses">
+            <i class="fa-solid fa-rotate"></i> Actualizar Catálogo
+          </button>
+        </div>
+
+        <div id="studentAvailableCoursesContainer" class="available-courses-grid">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Tab Content 4: Student Attendance History -->
+      <div id="tabStudentAttendanceHistory" class="tab-panel hidden">
+        <div class="panel-header-actions">
+          <h3>Registro Histórico de Asistencias</h3>
+        </div>
+        <div class="table-container glass-card">
+          <table class="academic-table" id="tableStudentAttendanceHistory">
+            <thead>
+              <tr>
+                <th>Asignatura & Grupo</th>
+                <th>Tema de Sesión</th>
+                <th>Fecha y Hora</th>
+                <th>Estado</th>
+                <th>Método de Registro</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Modal 1: Create Evaluation -->
+  <div class="modal-overlay hidden" id="modalEvaluation">
+    <div class="modal-box glass-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-clipboard-question"></i>
+          <h3 id="modalEvalTitle">Nueva Actividad / Evaluación</h3>
+        </div>
+        <button class="btn-close-modal" id="btnCloseEvalModal">&times;</button>
+      </div>
+
+      <form id="formEvaluation" class="modal-form">
+        <input type="hidden" id="evalGroupId">
+        <input type="hidden" id="evalEditId">
+
+        <div class="form-group">
+          <label for="inputEvalName">Nombre de la Actividad</label>
+          <input type="text" id="inputEvalName" placeholder="Ej. Taller de Criptografía QR" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="selectEvalType">Tipo de Actividad</label>
+            <select id="selectEvalType" class="form-select">
+              <option value="PARCIAL">Parcial</option>
+              <option value="FINAL">Examen Final</option>
+              <option value="QUIZ">Quiz / Control</option>
+              <option value="TALLER">Taller / Laboratorio</option>
+              <option value="PROYECTO">Proyecto</option>
+              <option value="EXPOSICION">Exposición</option>
+              <option value="PARTICIPACION">Participación</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="inputEvalWeight">Ponderación (%)</label>
+            <input type="number" id="inputEvalWeight" min="1" max="100" step="0.5" placeholder="Ej. 25" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="inputEvalMaxScore">Nota Máxima</label>
+            <input type="number" id="inputEvalMaxScore" min="1" max="100" step="0.1" value="5.0" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputEvalDueDate">Fecha Límite</label>
+            <input type="date" id="inputEvalDueDate">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputEvalDesc">Descripción / Rúbrica</label>
+          <textarea id="inputEvalDesc" rows="2" placeholder="Detalles de la entrega..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-glass" id="btnCancelEvalModal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitEvaluation">Guardar Actividad</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Edit Grade & Audit Reason -->
+  <div class="modal-overlay hidden" id="modalGrade">
+    <div class="modal-box glass-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-pen-to-square"></i>
+          <h3>Calificar / Modificar Nota</h3>
+        </div>
+        <button class="btn-close-modal" id="btnCloseGradeModal">&times;</button>
+      </div>
+
+      <form id="formGrade" class="modal-form">
+        <input type="hidden" id="gradeEvalId">
+        <input type="hidden" id="gradeStudentId">
+        <input type="hidden" id="gradeOldScore">
+
+        <div class="grade-modal-info">
+          <div class="info-row">
+            <span>Estudiante:</span>
+            <strong id="gradeStudentName">-</strong>
+          </div>
+          <div class="info-row">
+            <span>Evaluación:</span>
+            <strong id="gradeEvalName">-</strong>
+          </div>
+          <div class="info-row">
+            <span>Nota Actual:</span>
+            <span class="badge-score" id="gradeOldScoreBadge">Sin Calificar</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputGradeScore">Nota (Escala 0.0 a 5.0)</label>
+          <input type="number" id="inputGradeScore" min="0" max="5.0" step="0.1" placeholder="Ej. 4.5" required>
+        </div>
+
+        <div class="form-group">
+          <label for="inputGradeReason">Motivo del Cambio (Auditado en el historial)</label>
+          <input type="text" id="inputGradeReason" placeholder="Ej. Revisión presencial de informe..." required value="Calificación de actividad">
+        </div>
+
+        <div class="form-group">
+          <label for="inputGradeFeedback">Observaciones / Feedback al Alumno</label>
+          <textarea id="inputGradeFeedback" rows="2" placeholder="Comentarios pedagógicos..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-glass" id="btnCancelGradeModal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitGrade">Guardar Nota Auditada</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Create or Edit Course Group (Admin) -->
+  <div class="modal-overlay hidden" id="modalGroup">
+    <div class="modal-box glass-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-layer-group"></i>
+          <h3 id="modalGroupTitle">Crear o Editar Grupo</h3>
+        </div>
+        <button class="btn-close-modal" id="btnCloseGroupModal">&times;</button>
+      </div>
+
+      <form id="formGroup" class="modal-form">
+        <input type="hidden" id="groupEditId">
+
+        <div class="form-group">
+          <label for="selectGroupSubject">Asignatura</label>
+          <select id="selectGroupSubject" class="form-select" required></select>
+        </div>
+
+        <div class="form-group">
+          <label for="selectGroupTeacher">Profesor Asignado</label>
+          <select id="selectGroupTeacher" class="form-select" required></select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="inputGroupCode">Código de Grupo</label>
+            <input type="text" id="inputGroupCode" placeholder="Ej. IS301-G01" required>
+          </div>
+          <div class="form-group">
+            <label for="selectGroupPeriod">Período Académico</label>
+            <select id="selectGroupPeriod" class="form-select" required></select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="inputGroupSchedule">Horario</label>
+            <input type="text" id="inputGroupSchedule" placeholder="Ej. Lun y Mié 08:00 - 10:00" required>
+          </div>
+          <div class="form-group">
+            <label for="inputGroupClassroom">Aula / Laboratorio</label>
+            <input type="text" id="inputGroupClassroom" placeholder="Ej. Lab 302" required>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-glass" id="btnCancelGroupModal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitGroup">Guardar Asignación</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 4: Edit Teacher Profile (Admin) -->
+  <div class="modal-overlay hidden" id="modalTeacher">
+    <div class="modal-box glass-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-chalkboard-user"></i>
+          <h3>Editar Perfil de Docente</h3>
+        </div>
+        <button class="btn-close-modal" id="btnCloseTeacherModal">&times;</button>
+      </div>
+
+      <form id="formTeacher" class="modal-form">
+        <input type="hidden" id="teacherEditId">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="inputTeacherFirstName">Nombre</label>
+            <input type="text" id="inputTeacherFirstName" required>
+          </div>
+          <div class="form-group">
+            <label for="inputTeacherLastName">Apellido</label>
+            <input type="text" id="inputTeacherLastName" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputTeacherDept">Departamento / Facultad</label>
+          <input type="text" id="inputTeacherDept" required>
+        </div>
+
+        <div class="form-group">
+          <label for="inputTeacherSpecialty">Especialidad Académica</label>
+          <input type="text" id="inputTeacherSpecialty">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-glass" id="btnCancelTeacherModal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Actualizar Docente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Enroll Student into Course Group (Admin) -->
+  <div class="modal-overlay hidden" id="modalEnrollment">
+    <div class="modal-box glass-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-user-plus"></i>
+          <h3>Matricular Estudiante en Grupo</h3>
+        </div>
+        <button class="btn-close-modal" id="btnCloseEnrollModal">&times;</button>
+      </div>
+
+      <form id="formEnrollment" class="modal-form">
+        <div class="form-group">
+          <label for="selectEnrollStudent">Estudiante</label>
+          <select id="selectEnrollStudent" class="form-select" required></select>
+        </div>
+
+        <div class="form-group">
+          <label for="selectEnrollGroup">Grupo / Asignatura</label>
+          <select id="selectEnrollGroup" class="form-select" required></select>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-glass" id="btnCancelEnrollModal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Completar Matrícula</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 6: Create Subject (Admin) -->
+  <div class="modal-overlay hidden" id="modalSubject">
+    <div class="modal-box glass-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-cubes"></i>
+          <h3>Nueva Asignatura</h3>
+        </div>
+        <button class="btn-close-modal" id="btnCloseSubjectModal">&times;</button>
+      </div>
+
+      <form id="formSubject" class="modal-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="inputSubjectCode">Código</label>
+            <input type="text" id="inputSubjectCode" placeholder="Ej. IS-401" required>
+          </div>
+          <div class="form-group">
+            <label for="inputSubjectCredits">Créditos</label>
+            <input type="number" id="inputSubjectCredits" min="1" max="10" value="3" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputSubjectName">Nombre de la Asignatura</label>
+          <input type="text" id="inputSubjectName" placeholder="Ej. Seguridad en Aplicaciones Web" required>
+        </div>
+
+        <div class="form-group">
+          <label for="inputSubjectDesc">Descripción</label>
+          <textarea id="inputSubjectDesc" rows="2" placeholder="Contenidos clave..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-glass" id="btnCancelSubjectModal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Asignatura</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 7: Create or Edit Teacher's Own Course / Subject -->
+  <div class="modal-overlay hidden" id="modalTeacherCourse">
+    <div class="modal-box glass-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-chalkboard-user"></i>
+          <h3 id="modalTeacherCourseTitle">Crear Mi Asignatura a Impartir</h3>
+        </div>
+        <button class="btn-close-modal" id="btnCloseTeacherCourseModal">&times;</button>
+      </div>
+
+      <form id="formTeacherCourse" class="modal-form">
+        <input type="hidden" id="teacherCourseEditGroupId">
+
+        <div class="form-group">
+          <label for="inputTeacherSubName"><i class="fa-solid fa-book"></i> Nombre de la Asignatura que va a Impartir</label>
+          <input type="text" id="inputTeacherSubName" placeholder="Ej. Inteligencia Artificial, Bases de Datos, Cálculo..." required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="inputTeacherSubCode">Código de la Asignatura</label>
+            <input type="text" id="inputTeacherSubCode" placeholder="Ej. IA-501 (opcional)">
+          </div>
+          <div class="form-group">
+            <label for="inputTeacherGroupCode">Grupo</label>
+            <input type="text" id="inputTeacherGroupCode" placeholder="Ej. G01" value="G01" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="inputTeacherSchedule"><i class="fa-regular fa-clock"></i> Horario de Clase</label>
+            <input type="text" id="inputTeacherSchedule" placeholder="Ej. Lun y Mié 10:00 - 12:00" required>
+          </div>
+          <div class="form-group">
+            <label for="inputTeacherClassroom"><i class="fa-solid fa-location-dot"></i> Aula / Laboratorio</label>
+            <input type="text" id="inputTeacherClassroom" placeholder="Ej. Aula 302 o Lab 1" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputTeacherDesc">Descripción / Objetivos del Curso</label>
+          <textarea id="inputTeacherDesc" rows="2" placeholder="Temas clave o información para los alumnos..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-glass" id="btnCancelTeacherCourseModal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitTeacherCourse">
+            <i class="fa-solid fa-circle-check"></i> Guardar Asignatura y Grupo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 8: Dynamic QR Fullscreen Projector / Theater Mode -->
+  <div class="fullscreen-qr-overlay hidden" id="modalFullscreenQR">
+    <div class="fullscreen-qr-container">
+      <div class="fullscreen-qr-header">
+        <h2 id="fsTopicTitle">Asistencia Dinámica en Vivo</h2>
+        <p id="fsSubtitle">Enfoque la cámara de su dispositivo para registrar su asistencia</p>
+      </div>
+
+      <div class="fullscreen-qr-stage" id="fsStageWrapper">
+        <div id="fullscreenQRElement"></div>
+      </div>
+
+      <div class="fullscreen-telemetry-bar">
+        <div class="fs-telemetry-item timer">
+          <i class="fa-solid fa-arrows-rotate fa-spin"></i>
+          <span>Código rota en: <strong id="fsCountdownSeconds">20</strong>s</span>
+        </div>
+        <div class="fs-telemetry-item counter">
+          <i class="fa-solid fa-users"></i>
+          <span>Presentes: <strong id="fsCounterPresent">0</strong> / <strong id="fsCounterTotal">0</strong> (<strong id="fsCounterPercent">0%</strong>)</span>
+        </div>
+      </div>
+
+      <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center;">
+        <button class="btn btn-secondary btn-lg" id="btnCloseFullscreenQR">
+          <i class="fa-solid fa-compress"></i> Salir del Modo Proyector (ESC)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>NexusAcademic Enterprise • Sistema Integral de Gestión Académica & Asistencia QR</span>
+      </div>
+      <p class="footer-copy">
+        © 2026 NexusAcademic Platform. Diseñado con Vanilla CSS Glassmorphism, SQLite Transaccional & Node.js ES Modules.
+      </p>
+    </div>
+  </footer>
+
+  <!-- Main Client Script -->
+  <script src="js/app.js"></script>
+</body>
+</html>

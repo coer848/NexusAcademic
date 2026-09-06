@@ -1,0 +1,32 @@
+{
+  "name": "nexus-academic-platform",
+  "version": "1.0.0",
+  "description": "Plataforma Académica Integral con Asistencia QR Dinámica, Evaluaciones, Calificaciones y Auditoría",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "seed": "node --env-file-if-exists=.env src/database/seed.js",
+    "test": "node tests/runner.js",
+    "test:security": "node tests/security.test.js"
+  },
+  "keywords": [
+    "academic-platform",
+    "qr-attendance",
+    "grades",
+    "audit",
+    "rbac"
+  ],
+  "author": "Antigravity Engineering Team",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "qrcode": "^1.5.4"
+  }
+}
