@@ -67,6 +67,7 @@ CREATE TABLE `users` (
   `password_hash` VARCHAR(255) NOT NULL,
   `first_name` VARCHAR(100) NOT NULL,
   `last_name` VARCHAR(100) NOT NULL,
+  `phone` VARCHAR(30) DEFAULT NULL,
   `role` ENUM('ADMIN', 'TEACHER', 'STUDENT') NOT NULL,
   `status` ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
   `avatar_url` VARCHAR(255) DEFAULT NULL,
@@ -276,14 +277,14 @@ VALUES (1, 1, '2026-1 (Semestre Activo)', '2026-02-01', '2026-06-30', 1);
 -- Admin: Admin123!
 -- Docentes: Teacher123!
 -- Estudiantes: Student123!
-INSERT INTO `users` (`id`, `email`, `password_hash`, `first_name`, `last_name`, `role`, `status`) VALUES
-(1, 'admin@nexus.edu', '$2y$10$rdbQcCnB07aRMwmqn.yhMe3jLCH2IYIkluW/.vHy4y6uw6k05FFW6', 'Valeria', 'Alarcón (Admin)', 'ADMIN', 'ACTIVE'),
-(2, 'prof.carlos@nexus.edu', '$2y$10$5CZMfbGGc8YqV2VGtTDCNOpixMIi1vgU8W7ALGMQOGGAd354keov.', 'Carlos', 'Mendoza', 'TEACHER', 'ACTIVE'),
-(3, 'prof.elena@nexus.edu', '$2y$10$5CZMfbGGc8YqV2VGtTDCNOpixMIi1vgU8W7ALGMQOGGAd354keov.', 'Elena', 'Ramos', 'TEACHER', 'ACTIVE'),
-(4, 'estudiante.valeria@nexus.edu', '$2y$10$DIZXAj53vjsAP4juQ10Pr.Ieaf81HGLdKSOW1Vs.vF5710jpxukQC', 'Valeria', 'Ríos', 'STUDENT', 'ACTIVE'),
-(5, 'estudiante.mateo@nexus.edu', '$2y$10$DIZXAj53vjsAP4juQ10Pr.Ieaf81HGLdKSOW1Vs.vF5710jpxukQC', 'Mateo', 'Silva', 'STUDENT', 'ACTIVE'),
-(6, 'estudiante.camila@nexus.edu', '$2y$10$DIZXAj53vjsAP4juQ10Pr.Ieaf81HGLdKSOW1Vs.vF5710jpxukQC', 'Camila', 'Torres', 'STUDENT', 'ACTIVE'),
-(7, 'estudiante.alejandro@nexus.edu', '$2y$10$DIZXAj53vjsAP4juQ10Pr.Ieaf81HGLdKSOW1Vs.vF5710jpxukQC', 'Alejandro', 'Vega', 'STUDENT', 'ACTIVE');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `first_name`, `last_name`, `phone`, `role`, `status`) VALUES
+(1, 'admin@nexus.edu', '$2y$10$rdbQcCnB07aRMwmqn.yhMe3jLCH2IYIkluW/.vHy4y6uw6k05FFW6', 'Valeria', 'Alarcón (Admin)', '+57 300 111 2233', 'ADMIN', 'ACTIVE'),
+(2, 'prof.carlos@nexus.edu', '$2y$10$5CZMfbGGc8YqV2VGtTDCNOpixMIi1vgU8W7ALGMQOGGAd354keov.', 'Carlos', 'Mendoza', '+57 311 222 3344', 'TEACHER', 'ACTIVE'),
+(3, 'prof.elena@nexus.edu', '$2y$10$5CZMfbGGc8YqV2VGtTDCNOpixMIi1vgU8W7ALGMQOGGAd354keov.', 'Elena', 'Ramos', '+57 312 333 4455', 'TEACHER', 'ACTIVE'),
+(4, 'estudiante.valeria@nexus.edu', '$2y$10$DIZXAj53vjsAP4juQ10Pr.Ieaf81HGLdKSOW1Vs.vF5710jpxukQC', 'Valeria', 'Ríos', '+57 320 444 5566', 'STUDENT', 'ACTIVE'),
+(5, 'estudiante.mateo@nexus.edu', '$2y$10$DIZXAj53vjsAP4juQ10Pr.Ieaf81HGLdKSOW1Vs.vF5710jpxukQC', 'Mateo', 'Silva', '+57 321 555 6677', 'STUDENT', 'ACTIVE'),
+(6, 'estudiante.camila@nexus.edu', '$2y$10$DIZXAj53vjsAP4juQ10Pr.Ieaf81HGLdKSOW1Vs.vF5710jpxukQC', 'Camila', 'Torres', '+57 322 666 7788', 'STUDENT', 'ACTIVE'),
+(7, 'estudiante.alejandro@nexus.edu', '$2y$10$DIZXAj53vjsAP4juQ10Pr.Ieaf81HGLdKSOW1Vs.vF5710jpxukQC', 'Alejandro', 'Vega', '+57 323 777 8899', 'STUDENT', 'ACTIVE');
 
 -- 5.4 DOCENTES
 INSERT INTO `teachers` (`id`, `user_id`, `teacher_code`, `department`, `specialty`) VALUES

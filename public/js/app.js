@@ -236,6 +236,20 @@ function showView(viewId) {
     target.classList.remove('hidden');
     target.classList.add('active');
   }
+
+  // Highlight active nav button
+  document.querySelectorAll('#mainNavLinks .nav-btn').forEach(btn => {
+    const attr = btn.getAttribute('onclick') || '';
+    if (attr.includes(`'${viewId}'`)) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  if (viewId === 'viewProfile') {
+    loadUserProfile();
+  }
 }
 
 function updateNavBar(role) {
@@ -257,23 +271,38 @@ function updateNavBar(role) {
   userName.textContent = `${AppState.user.firstName} ${AppState.user.lastName}`;
   userRole.textContent = AppState.user.role;
 
+  // Make user badge pill navigate to profile
+  userPill.onclick = (e) => {
+    if (e.target.closest('#btnLogout')) return;
+    showView('viewProfile');
+  };
+
+  const profileBtnHtml = `
+    <button class="nav-btn" onclick="showView('viewProfile')" id="navBtnProfile" title="Ver mi información y perfil">
+      <i class="fa-solid fa-id-card"></i> Mi Perfil
+    </button>
+  `;
+
   if (role === 'ADMIN') {
     linksContainer.innerHTML = `
       <button class="nav-btn active" onclick="showView('viewAdmin')">
         <i class="fa-solid fa-crown"></i> Panel Admin
       </button>
+      ${profileBtnHtml}
     `;
   } else if (role === 'TEACHER') {
     linksContainer.innerHTML = `
       <button class="nav-btn active" onclick="showView('viewTeacher')">
         <i class="fa-solid fa-chalkboard-user"></i> Mis Clases & Asistencia
       </button>
+      ${profileBtnHtml}
     `;
   } else if (role === 'STUDENT') {
     linksContainer.innerHTML = `
       <button class="nav-btn active" onclick="showView('viewStudent')">
         <i class="fa-solid fa-graduation-cap"></i> Mi Portal Estudiantil
       </button>
+      ${profileBtnHtml}
     `;
   }
 }
@@ -347,6 +376,7 @@ async function handleRegisterSubmit(e) {
   e.preventDefault();
   const firstName = document.getElementById('regFirstName').value.trim();
   const lastName = document.getElementById('regLastName').value.trim();
+  const phone = document.getElementById('regPhone') ? document.getElementById('regPhone').value.trim() : '';
   const email = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
   const role = document.getElementById('regRole').value;
@@ -360,6 +390,7 @@ async function handleRegisterSubmit(e) {
       body: {
         first_name: firstName,
         last_name: lastName,
+        phone: phone,
         email: email,
         password: password,
         role: role,
@@ -411,6 +442,299 @@ function logout() {
   updateNavBar(null);
   showView('viewLogin');
 }
+
+// ================= USER PROFILE & ACCOUNT MANAGEMENT CONTROLLER =================
+async function loadUserProfile() {
+  if (!AppState.user) {
+    try {
+      const data = await apiFetch('/api/auth/me');
+      AppState.user = data.user;
+    } catch (e) {
+      console.error('Error al cargar datos del usuario:', e);
+      return;
+    }
+  }
+
+  const u = AppState.user;
+  const initials = `${u.firstName ? u.firstName[0] : 'U'}${u.lastName ? u.lastName[0] : ''}`;
+
+  // 1. Overview Card
+  const avatarBig = document.getElementById('profileAvatarBig');
+  if (avatarBig) avatarBig.textContent = initials;
+
+  const displayName = document.getElementById('profileDisplayName');
+  if (displayName) displayName.textContent = `${u.firstName} ${u.lastName}`;
+
+  const displayEmail = document.getElementById('profileDisplayEmail');
+  if (displayEmail) displayEmail.textContent = u.email;
+
+  const roleTag = document.getElementById('profileRoleTag');
+  if (roleTag) {
+    roleTag.textContent = u.role === 'ADMIN' ? 'ADMINISTRADOR' : (u.role === 'TEACHER' ? 'DOCENTE' : 'ESTUDIANTE');
+  }
+
+  const badgeRole = document.getElementById('profileBadgeRole');
+  if (badgeRole) {
+    badgeRole.className = `badge-role ${u.role ? u.role.toLowerCase() : 'student'}`;
+  }
+
+  const displayPhone = document.getElementById('profileDisplayPhone');
+  if (displayPhone) displayPhone.textContent = u.phone ? u.phone : 'No registrado';
+
+  const displayId = document.getElementById('profileDisplayId');
+  if (displayId) displayId.textContent = `#${u.id}`;
+
+  const displayStatus = document.getElementById('profileDisplayStatus');
+  if (displayStatus) displayStatus.textContent = u.status || 'ACTIVO';
+
+  const displayCreatedAt = document.getElementById('profileDisplayCreatedAt');
+  if (displayCreatedAt) {
+    if (u.createdAt) {
+      try {
+        const d = new Date(u.createdAt);
+        displayCreatedAt.textContent = d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+      } catch (err) {
+        displayCreatedAt.textContent = u.createdAt;
+      }
+    } else {
+      displayCreatedAt.textContent = 'Registrado';
+    }
+  }
+
+  // 2. Role-specific Details Card
+  const roleTitle = document.getElementById('profileRoleDetailsTitle');
+  const roleContent = document.getElementById('profileRoleDetailsContent');
+  const studentExtra = document.getElementById('profileStudentExtraFields');
+  const teacherExtra = document.getElementById('profileTeacherExtraFields');
+
+  if (u.role === 'STUDENT') {
+    if (roleTitle) roleTitle.innerHTML = '<i class="fa-solid fa-graduation-cap"></i> Información Académica';
+    if (roleContent) {
+      roleContent.innerHTML = `
+        <div class="profile-role-item">
+          <span>Código Estudiantil:</span>
+          <strong>${u.student?.student_code || 'N/A'}</strong>
+        </div>
+        <div class="profile-role-item">
+          <span>Carrera Universitaria:</span>
+          <strong>${u.student?.career || 'N/A'}</strong>
+        </div>
+        <div class="profile-role-item">
+          <span>Semestre Actual:</span>
+          <strong>${u.student?.semester ? `${u.student.semester}° Semestre` : '1° Semestre'}</strong>
+        </div>
+      `;
+    }
+    if (studentExtra) studentExtra.classList.remove('hidden');
+    if (teacherExtra) teacherExtra.classList.add('hidden');
+
+    const inpCareer = document.getElementById('inputProfileCareer');
+    if (inpCareer) inpCareer.value = u.student?.career || '';
+    const inpSemester = document.getElementById('inputProfileSemester');
+    if (inpSemester) inpSemester.value = u.student?.semester || 1;
+
+  } else if (u.role === 'TEACHER') {
+    if (roleTitle) roleTitle.innerHTML = '<i class="fa-solid fa-chalkboard-user"></i> Datos del Docente';
+    if (roleContent) {
+      roleContent.innerHTML = `
+        <div class="profile-role-item">
+          <span>Código de Docente:</span>
+          <strong>${u.teacher?.teacher_code || 'N/A'}</strong>
+        </div>
+        <div class="profile-role-item">
+          <span>Departamento:</span>
+          <strong>${u.teacher?.department || 'N/A'}</strong>
+        </div>
+        <div class="profile-role-item">
+          <span>Especialidad:</span>
+          <strong>${u.teacher?.specialty || 'General'}</strong>
+        </div>
+      `;
+    }
+    if (studentExtra) studentExtra.classList.add('hidden');
+    if (teacherExtra) teacherExtra.classList.remove('hidden');
+
+    const inpDept = document.getElementById('inputProfileDept');
+    if (inpDept) inpDept.value = u.teacher?.department || '';
+    const inpSpec = document.getElementById('inputProfileSpecialty');
+    if (inpSpec) inpSpec.value = u.teacher?.specialty || '';
+
+  } else if (u.role === 'ADMIN') {
+    if (roleTitle) roleTitle.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Privilegios de Sistema';
+    if (roleContent) {
+      roleContent.innerHTML = `
+        <div class="profile-role-item">
+          <span>Nivel de Acceso:</span>
+          <strong>Superadministrador</strong>
+        </div>
+        <div class="profile-role-item">
+          <span>Control Criptográfico:</span>
+          <strong>Activo & Habilitado</strong>
+        </div>
+        <div class="profile-role-item">
+          <span>Auditoría de Acciones:</span>
+          <strong>Inmutable en Base de Datos</strong>
+        </div>
+      `;
+    }
+    if (studentExtra) studentExtra.classList.add('hidden');
+    if (teacherExtra) teacherExtra.classList.add('hidden');
+  }
+
+  // 3. Populate Editable Form Fields
+  const inpFirst = document.getElementById('inputProfileFirstName');
+  if (inpFirst) inpFirst.value = u.firstName || '';
+  const inpLast = document.getElementById('inputProfileLastName');
+  if (inpLast) inpLast.value = u.lastName || '';
+  const inpEmail = document.getElementById('inputProfileEmail');
+  if (inpEmail) inpEmail.value = u.email || '';
+  const inpPhone = document.getElementById('inputProfilePhone');
+  if (inpPhone) inpPhone.value = u.phone || '';
+}
+
+async function handleProfileUpdateSubmit(e) {
+  e.preventDefault();
+  const firstName = document.getElementById('inputProfileFirstName').value.trim();
+  const lastName = document.getElementById('inputProfileLastName').value.trim();
+  const phone = document.getElementById('inputProfilePhone').value.trim();
+
+  const body = { firstName, lastName, phone };
+
+  if (AppState.user?.role === 'STUDENT') {
+    const career = document.getElementById('inputProfileCareer').value.trim();
+    const semester = parseInt(document.getElementById('inputProfileSemester').value) || 1;
+    body.career = career;
+    body.semester = semester;
+  } else if (AppState.user?.role === 'TEACHER') {
+    const department = document.getElementById('inputProfileDept').value.trim();
+    const specialty = document.getElementById('inputProfileSpecialty').value.trim();
+    body.department = department;
+    body.specialty = specialty;
+  }
+
+  const btn = document.getElementById('btnSaveProfile');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+  }
+
+  try {
+    const res = await apiFetch('/api/auth/profile', {
+      method: 'PUT',
+      body: body
+    });
+
+    AppState.user = res.user;
+    sfx.playSuccess();
+    showToast('¡Perfil y datos actualizados correctamente!', 'success');
+    updateNavBar(AppState.user.role);
+    loadUserProfile();
+  } catch (err) {
+    sfx.playError();
+    showToast(`Error al actualizar perfil: ${err.message}`, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Cambios en mi Perfil';
+    }
+  }
+}
+
+async function handleProfileChangePasswordSubmit(e) {
+  e.preventDefault();
+  const currentPassword = document.getElementById('inputProfileCurrentPass').value;
+  const newPassword = document.getElementById('inputProfileNewPass').value;
+
+  if (newPassword.length < 6) {
+    showToast('La nueva contraseña debe tener al menos 6 caracteres.', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('btnUpdatePassword');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Actualizando...';
+  }
+
+  try {
+    const res = await apiFetch('/api/auth/change-password', {
+      method: 'POST',
+      body: { currentPassword, newPassword }
+    });
+
+    sfx.playSuccess();
+    showToast(res.message || '¡Contraseña actualizada con éxito!', 'success');
+    document.getElementById('formProfileChangePassword').reset();
+  } catch (err) {
+    sfx.playError();
+    showToast(`Error al cambiar contraseña: ${err.message}`, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Actualizar Contraseña';
+    }
+  }
+}
+
+function openDeleteAccountModal() {
+  const modal = document.getElementById('modalDeleteAccount');
+  if (!modal) return;
+  const inpPass = document.getElementById('inputDeletePassword');
+  if (inpPass) inpPass.value = '';
+  const chk = document.getElementById('checkConfirmDelete');
+  if (chk) chk.checked = false;
+  modal.classList.remove('hidden');
+}
+
+function closeDeleteAccountModal() {
+  const modal = document.getElementById('modalDeleteAccount');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function handleDeleteAccountSubmit(e) {
+  e.preventDefault();
+  const password = document.getElementById('inputDeletePassword').value;
+  const isChecked = document.getElementById('checkConfirmDelete').checked;
+
+  if (!isChecked) {
+    showToast('Por favor marca la casilla confirmando que entiendes la acción.', 'warning');
+    return;
+  }
+
+  if (!password) {
+    showToast('Debes ingresar tu contraseña para confirmar la eliminación.', 'warning');
+    return;
+  }
+
+  const btnConfirm = document.getElementById('btnConfirmDelete');
+  if (btnConfirm) {
+    btnConfirm.disabled = true;
+    btnConfirm.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Eliminando tu cuenta...';
+  }
+
+  try {
+    const res = await apiFetch('/api/auth/delete-account', {
+      method: 'POST',
+      body: { password }
+    });
+
+    closeDeleteAccountModal();
+    sfx.playSuccess();
+    showToast(res.message || 'Tu cuenta ha sido eliminada definitivamente.', 'info');
+
+    setTimeout(() => {
+      logout();
+    }, 1200);
+  } catch (err) {
+    sfx.playError();
+    showToast(`Error al eliminar la cuenta: ${err.message}`, 'error');
+    if (btnConfirm) {
+      btnConfirm.disabled = false;
+      btnConfirm.innerHTML = '<i class="fa-solid fa-trash-can"></i> Sí, Eliminar mi Cuenta';
+    }
+  }
+}
+
 
 // ================= ADMIN DASHBOARD CONTROLLER =================
 async function loadAdminDashboard() {
@@ -1967,6 +2291,40 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCsv.addEventListener('click', () => {
       showToast('Exportando matriz de calificaciones...', 'info');
       window.open(`/api/grades/group/${AppState.selectedGroupId}/matrix`, '_blank');
+    });
+  }
+
+  // Profile & Account Management Form Listeners
+  const formProfile = document.getElementById('formUpdateProfile');
+  if (formProfile) formProfile.addEventListener('submit', handleProfileUpdateSubmit);
+
+  const formProfilePass = document.getElementById('formProfileChangePassword');
+  if (formProfilePass) formProfilePass.addEventListener('submit', handleProfileChangePasswordSubmit);
+
+  const btnOpenDel = document.getElementById('btnOpenDeleteAccountModal');
+  if (btnOpenDel) btnOpenDel.addEventListener('click', openDeleteAccountModal);
+
+  const btnCloseDel = document.getElementById('btnCloseDeleteAccountModal');
+  if (btnCloseDel) btnCloseDel.addEventListener('click', closeDeleteAccountModal);
+
+  const btnCancelDel = document.getElementById('btnCancelDeleteAccount');
+  if (btnCancelDel) btnCancelDel.addEventListener('click', closeDeleteAccountModal);
+
+  const formDelAcc = document.getElementById('formDeleteAccount');
+  if (formDelAcc) formDelAcc.addEventListener('submit', handleDeleteAccountSubmit);
+
+  const btnRefProf = document.getElementById('btnRefreshProfile');
+  if (btnRefProf) {
+    btnRefProf.addEventListener('click', async () => {
+      showToast('Sincronizando datos de perfil...', 'info');
+      try {
+        const res = await apiFetch('/api/auth/me');
+        AppState.user = res.user;
+        loadUserProfile();
+        showToast('Perfil actualizado con éxito.', 'success');
+      } catch (err) {
+        showToast(`Error: ${err.message}`, 'error');
+      }
     });
   }
 });

@@ -145,9 +145,15 @@
                 </div>
               </div>
 
-              <div class="form-group">
-                <label for="regEmail"><i class="fa-solid fa-envelope"></i> Correo Electrónico</label>
-                <input type="email" id="regEmail" placeholder="usuario@nexus.edu" required>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="regEmail"><i class="fa-solid fa-envelope"></i> Correo Electrónico</label>
+                  <input type="email" id="regEmail" placeholder="usuario@nexus.edu" required>
+                </div>
+                <div class="form-group">
+                  <label for="regPhone"><i class="fa-solid fa-phone"></i> Número Telefónico / Móvil</label>
+                  <input type="tel" id="regPhone" placeholder="Ej. +57 300 123 4567" required autocomplete="tel">
+                </div>
               </div>
 
               <div class="form-group">
@@ -789,6 +795,184 @@
         </div>
       </div>
     </section>
+
+    <!-- ================= VIEW 5: USER PROFILE & ACCOUNT MANAGEMENT ================= -->
+    <section id="viewProfile" class="view-section hidden">
+      <div class="section-header-flex">
+        <div>
+          <span class="badge-role student" id="profileBadgeRole"><i class="fa-solid fa-id-card"></i> Perfil Institucional</span>
+          <h1 class="view-title">Mi Perfil & Datos de Cuenta</h1>
+          <p class="view-subtitle">Consulta y actualiza tu información registrada, credenciales y opciones de cuenta.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-sm" id="btnRefreshProfile">
+            <i class="fa-solid fa-rotate"></i> Actualizar Perfil
+          </button>
+        </div>
+      </div>
+
+      <div class="profile-layout-grid">
+        <!-- Columna Izquierda: Tarjeta Resumen y Credencial -->
+        <div class="profile-sidebar-col">
+          <div class="glass-card profile-card-hero">
+            <div class="profile-avatar-wrapper">
+              <div class="profile-avatar-large" id="profileAvatarBig">US</div>
+              <span class="status-indicator-dot online" title="Cuenta Activa"></span>
+            </div>
+            <h2 class="profile-name" id="profileDisplayName">Nombre de Usuario</h2>
+            <p class="profile-email" id="profileDisplayEmail">correo@nexus.edu</p>
+            <div class="profile-badge-pill" id="profileRoleTag">ESTUDIANTE</div>
+
+            <hr class="profile-divider">
+
+            <div class="profile-info-list">
+              <div class="profile-info-item">
+                <div class="info-label"><i class="fa-solid fa-phone"></i> Teléfono Móvil</div>
+                <div class="info-val" id="profileDisplayPhone">No registrado</div>
+              </div>
+              <div class="profile-info-item">
+                <div class="info-label"><i class="fa-solid fa-fingerprint"></i> ID de Usuario</div>
+                <div class="info-val font-mono" id="profileDisplayId">#0</div>
+              </div>
+              <div class="profile-info-item">
+                <div class="info-label"><i class="fa-solid fa-circle-check"></i> Estado de Cuenta</div>
+                <div class="info-val"><span class="badge-status-ok" id="profileDisplayStatus">ACTIVO</span></div>
+              </div>
+              <div class="profile-info-item">
+                <div class="info-label"><i class="fa-regular fa-calendar-check"></i> Miembro Desde</div>
+                <div class="info-val" id="profileDisplayCreatedAt">-</div>
+              </div>
+            </div>
+
+            <!-- Ficha Complementaria Según Rol -->
+            <div class="profile-role-card glass-card" id="profileRoleDetailsCard">
+              <h4 id="profileRoleDetailsTitle"><i class="fa-solid fa-graduation-cap"></i> Información Académica</h4>
+              <div class="profile-role-details-content" id="profileRoleDetailsContent">
+                <!-- Rellenado dinámicamente -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Edición de Datos, Seguridad y Zona de Peligro -->
+        <div class="profile-main-col">
+          
+          <!-- Card 1: Editar Datos Personales -->
+          <div class="glass-card profile-section-card">
+            <div class="card-title-group">
+              <div class="card-icon-tag"><i class="fa-solid fa-user-pen"></i></div>
+              <div>
+                <h3>Información de Contacto y Datos Personales</h3>
+                <p>Modifica tu nombre, teléfono y datos de tu registro institucional.</p>
+              </div>
+            </div>
+
+            <form id="formUpdateProfile" class="profile-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="inputProfileFirstName"><i class="fa-solid fa-user"></i> Nombre</label>
+                  <input type="text" id="inputProfileFirstName" required placeholder="Tu nombre">
+                </div>
+                <div class="form-group">
+                  <label for="inputProfileLastName">Apellido</label>
+                  <input type="text" id="inputProfileLastName" required placeholder="Tu apellido">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="inputProfileEmail"><i class="fa-solid fa-envelope"></i> Correo Electrónico (Institucional)</label>
+                  <input type="email" id="inputProfileEmail" disabled title="El correo institucional no puede modificarse directamente">
+                </div>
+                <div class="form-group">
+                  <label for="inputProfilePhone"><i class="fa-solid fa-phone"></i> Número Telefónico / Móvil</label>
+                  <input type="tel" id="inputProfilePhone" placeholder="Ej. +57 300 123 4567" required autocomplete="tel">
+                </div>
+              </div>
+
+              <!-- Campos dinámicos para Estudiantes -->
+              <div id="profileStudentExtraFields" class="form-row hidden">
+                <div class="form-group">
+                  <label for="inputProfileCareer"><i class="fa-solid fa-graduation-cap"></i> Carrera Universitaria</label>
+                  <input type="text" id="inputProfileCareer" placeholder="Ej. Ingeniería de Software">
+                </div>
+                <div class="form-group">
+                  <label for="inputProfileSemester"><i class="fa-solid fa-layer-group"></i> Semestre</label>
+                  <input type="number" id="inputProfileSemester" min="1" max="12" placeholder="1">
+                </div>
+              </div>
+
+              <!-- Campos dinámicos para Docentes -->
+              <div id="profileTeacherExtraFields" class="form-row hidden">
+                <div class="form-group">
+                  <label for="inputProfileDept"><i class="fa-solid fa-building-columns"></i> Departamento / Facultad</label>
+                  <input type="text" id="inputProfileDept" placeholder="Ej. Facultad de Ingeniería">
+                </div>
+                <div class="form-group">
+                  <label for="inputProfileSpecialty"><i class="fa-solid fa-award"></i> Especialidad</label>
+                  <input type="text" id="inputProfileSpecialty" placeholder="Ej. Algoritmia y Criptografía">
+                </div>
+              </div>
+
+              <div class="form-actions-right">
+                <button type="submit" class="btn btn-primary" id="btnSaveProfile">
+                  <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios en mi Perfil
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Card 2: Seguridad y Cambio de Contraseña -->
+          <div class="glass-card profile-section-card">
+            <div class="card-title-group">
+              <div class="card-icon-tag"><i class="fa-solid fa-shield-halved"></i></div>
+              <div>
+                <h3>Seguridad & Cambio de Contraseña</h3>
+                <p>Protege tu cuenta actualizando tu contraseña periódicamente.</p>
+              </div>
+            </div>
+
+            <form id="formProfileChangePassword" class="profile-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="inputProfileCurrentPass"><i class="fa-solid fa-lock"></i> Contraseña Actual</label>
+                  <input type="password" id="inputProfileCurrentPass" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <div class="form-group">
+                  <label for="inputProfileNewPass"><i class="fa-solid fa-key"></i> Nueva Contraseña (mínimo 6 caracteres)</label>
+                  <input type="password" id="inputProfileNewPass" placeholder="••••••••" required minlength="6" autocomplete="new-password">
+                </div>
+              </div>
+
+              <div class="form-actions-right">
+                <button type="submit" class="btn btn-secondary" id="btnUpdatePassword">
+                  <i class="fa-solid fa-arrows-rotate"></i> Actualizar Contraseña
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Card 3: Zona de Peligro - Eliminación Definitiva de Cuenta -->
+          <div class="glass-card profile-danger-card">
+            <div class="danger-header">
+              <div class="danger-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+              <div>
+                <h3 class="danger-title">Zona de Peligro — Eliminar Cuenta Definitivamente</h3>
+                <p class="danger-desc">
+                  Al eliminar tu cuenta, todos tus datos personales, accesos, registros de perfil y credenciales se borrarán permanentemente del sistema. Esta acción es <strong>definitiva e irreversible</strong>.
+                </p>
+              </div>
+            </div>
+            <div class="danger-actions">
+              <button type="button" class="btn btn-danger" id="btnOpenDeleteAccountModal">
+                <i class="fa-solid fa-trash-can"></i> Eliminar mi Cuenta Definitivamente
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- ================= MODALS ================= -->
@@ -1164,6 +1348,46 @@
           <i class="fa-solid fa-compress"></i> Salir del Modo Proyector (ESC)
         </button>
       </div>
+    </div>
+  <!-- Modal 9: Confirm Account Permanent Deletion -->
+  <div class="modal-overlay hidden" id="modalDeleteAccount">
+    <div class="modal-box glass-card modal-box-danger">
+      <div class="modal-header">
+        <div class="modal-title danger-modal-title">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <h3>Eliminar Cuenta Definitivamente</h3>
+        </div>
+        <button class="btn-close-modal" id="btnCloseDeleteAccountModal">&times;</button>
+      </div>
+
+      <form id="formDeleteAccount" class="modal-form">
+        <div class="modal-alert-box-danger">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <div>
+            <strong>¡Atención: Acción Destructiva e Irreversible!</strong>
+            <p>Se borrará permanentemente tu usuario en NexusAcademic. No podrás volver a ingresar con este correo ni recuperar tu información académica asociada.</p>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 1.25rem;">
+          <label for="inputDeletePassword"><i class="fa-solid fa-lock"></i> Introduce tu contraseña actual para confirmar:</label>
+          <input type="password" id="inputDeletePassword" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label class="checkbox-container" style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; font-size: 0.9rem; color: var(--text-muted);">
+            <input type="checkbox" id="checkConfirmDelete" required style="margin-top: 0.2rem; cursor: pointer; width: 1.1rem; height: 1.1rem;">
+            <span>Entiendo que esta acción borrará permanentemente mi usuario y no se podrá deshacer.</span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-glass" id="btnCancelDeleteAccount">Cancelar y Conservar Cuenta</button>
+          <button type="submit" class="btn btn-danger" id="btnConfirmDelete">
+            <i class="fa-solid fa-trash-can"></i> Sí, Eliminar mi Cuenta
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

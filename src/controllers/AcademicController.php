@@ -588,7 +588,7 @@ class AcademicController {
         $stmt = $pdo->query('
             SELECT 
                 t.id AS teacher_id, t.teacher_code, t.department, t.specialty,
-                u.id AS user_id, u.first_name, u.last_name, u.email, u.status,
+                u.id AS user_id, u.first_name, u.last_name, u.email, u.phone, u.status,
                 (SELECT COUNT(*) FROM course_groups cg WHERE cg.teacher_id = t.id) AS assigned_groups_count
             FROM teachers t
             JOIN users u ON t.user_id = u.id
@@ -626,16 +626,18 @@ class AcademicController {
                 (int)$teacherId
             ]);
 
-            if (!empty($body['first_name']) || !empty($body['last_name'])) {
+            if (!empty($body['first_name']) || !empty($body['last_name']) || isset($body['phone'])) {
                 $uUpd = $db->prepare('
                     UPDATE users 
                     SET first_name = COALESCE(?, first_name),
-                        last_name = COALESCE(?, last_name)
+                        last_name = COALESCE(?, last_name),
+                        phone = COALESCE(?, phone)
                     WHERE id = ?
                 ');
                 $uUpd->execute([
                     !empty($body['first_name']) ? trim($body['first_name']) : null,
                     !empty($body['last_name']) ? trim($body['last_name']) : null,
+                    isset($body['phone']) ? trim($body['phone']) : null,
                     $teacher['user_id']
                 ]);
             }
@@ -652,7 +654,7 @@ class AcademicController {
         $stmt = $pdo->query('
             SELECT 
                 s.id AS student_id, s.student_code, s.career, s.semester,
-                u.id AS user_id, u.first_name, u.last_name, u.email, u.status,
+                u.id AS user_id, u.first_name, u.last_name, u.email, u.phone, u.status,
                 (SELECT COUNT(*) FROM enrollments e WHERE e.student_id = s.id AND e.status = "ACTIVE") AS enrolled_courses_count
             FROM students s
             JOIN users u ON s.user_id = u.id

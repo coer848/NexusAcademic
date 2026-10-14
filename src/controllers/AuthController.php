@@ -16,6 +16,7 @@ class AuthController {
         $password   = $body['password'] ?? '';
         $firstName  = trim($body['first_name'] ?? '');
         $lastName   = trim($body['last_name'] ?? '');
+        $phone      = trim($body['phone'] ?? '');
         $role       = strtoupper(trim($body['role'] ?? ''));
         $code       = trim($body['code'] ?? '');
         $career     = trim($body['career'] ?? '');
@@ -69,13 +70,13 @@ class AuthController {
         $passwordHash = CryptoService::hashPassword($password);
 
         try {
-            $registeredUser = Database::transaction(function (PDO $db) use ($cleanEmail, $passwordHash, $firstName, $lastName, $role, $code, $department, $specialty, $career, $semester) {
+            $registeredUser = Database::transaction(function (PDO $db) use ($cleanEmail, $passwordHash, $firstName, $lastName, $phone, $role, $code, $department, $specialty, $career, $semester) {
                 // 1. Insert into users
                 $uStmt = $db->prepare('
-                    INSERT INTO users (email, password_hash, first_name, last_name, role, status)
-                    VALUES (?, ?, ?, ?, ?, "ACTIVE")
+                    INSERT INTO users (email, password_hash, first_name, last_name, phone, role, status)
+                    VALUES (?, ?, ?, ?, ?, ?, "ACTIVE")
                 ');
-                $uStmt->execute([$cleanEmail, $passwordHash, $firstName, $lastName, $role]);
+                $uStmt->execute([$cleanEmail, $passwordHash, $firstName, $lastName, !empty($phone) ? $phone : null, $role]);
                 $userId = (int)$db->lastInsertId();
 
                 $teacherProfile = null;
@@ -119,13 +120,14 @@ class AuthController {
                     INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details_json, ip_address)
                     VALUES (?, "USER_REGISTERED", "USER", ?, ?, ?)
                 ');
-                $aud->execute([$userId, (string)$userId, json_encode(['email' => $cleanEmail, 'role' => $role]), $ip]);
+                $aud->execute([$userId, (string)$userId, json_encode(['email' => $cleanEmail, 'phone' => $phone, 'role' => $role]), $ip]);
 
                 return [
                     'id'        => $userId,
                     'email'     => $cleanEmail,
                     'firstName' => $firstName,
                     'lastName'  => $lastName,
+                    'phone'     => !empty($phone) ? $phone : null,
                     'role'      => $role,
                     'teacher'   => $teacherProfile,
                     'student'   => $studentProfile
@@ -177,7 +179,7 @@ class AuthController {
 
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare('
-            SELECT id, email, password_hash, first_name, last_name, role, status 
+            SELECT id, email, password_hash, first_name, last_name, phone, role, status 
             FROM users 
             WHERE email = ?
         ');
@@ -255,6 +257,7 @@ class AuthController {
                 'email'     => $user['email'],
                 'firstName' => $user['first_name'],
                 'lastName'  => $user['last_name'],
+                'phone'     => $user['phone'] ?? null,
                 'role'      => $user['role'],
                 'teacher'   => $teacherProfile,
                 'student'   => $studentProfile
@@ -268,7 +271,7 @@ class AuthController {
     public static function getMe(array $user): void {
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare('
-            SELECT id, email, first_name, last_name, role, status, created_at 
+            SELECT id, email, first_name, last_name, phone, role, status, created_at 
             FROM users 
             WHERE id = ?
         ');
@@ -303,6 +306,7 @@ class AuthController {
                 'email'     => $dbUser['email'],
                 'firstName' => $dbUser['first_name'],
                 'lastName'  => $dbUser['last_name'],
+                'phone'     => $dbUser['phone'] ?? null,
                 'role'      => $dbUser['role'],
                 'status'    => $dbUser['status'],
                 'createdAt' => $dbUser['created_at'],
@@ -311,6 +315,225 @@ class AuthController {
             ],
             'institution' => $institution
         ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * PUT /api/auth/profile
+     */
+    public static function updateProfile(array $user, array $body): void {
+        $firstName = trim($body['firstName'] ?? $body['first_name'] ?? '');
+        $lastName  = trim($body['lastName'] ?? $body['last_name'] ?? '');
+        $phone     = trim($body['phone'] ?? '');
+
+        if (empty($firstName) || empty($lastName)) {
+            http_response_code(400);
+            echo json_encode([
+                'error'   => 'MISSING_FIELDS',
+                'message' => 'Nombre y apellido son obligatorios.'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $pdo = Database::getConnection();
+
+        try {
+            Database::transaction(function (PDO $db) use ($user, $firstName, $lastName, $phone, $body) {
+                // 1. Update basic user details
+                $uStmt = $db->prepare('UPDATE users SET first_name = ?, last_name = ?, phone = ? WHERE id = ?');
+                $uStmt->execute([$firstName, $lastName, !empty($phone) ? $phone : null, $user['id']]);
+
+                // 2. Role-specific profile updates
+                if ($user['role'] === 'STUDENT') {
+                    $career   = trim($body['career'] ?? '');
+                    $semester = isset($body['semester']) ? (int)$body['semester'] : null;
+
+                    if (!empty($career) || $semester !== null) {
+                        $sStmt = $db->prepare('
+                            UPDATE students 
+                            SET career = CASE WHEN ? != "" THEN ? ELSE career END,
+                                semester = CASE WHEN ? IS NOT NULL AND ? > 0 THEN ? ELSE semester END
+                            WHERE user_id = ?
+                        ');
+                        $sStmt->execute([$career, $career, $semester, $semester, $semester, $user['id']]);
+                    }
+                } elseif ($user['role'] === 'TEACHER') {
+                    $department = trim($body['department'] ?? '');
+                    $specialty  = trim($body['specialty'] ?? '');
+
+                    if (!empty($department) || !empty($specialty)) {
+                        $tStmt = $db->prepare('
+                            UPDATE teachers 
+                            SET department = CASE WHEN ? != "" THEN ? ELSE department END,
+                                specialty = CASE WHEN ? != "" THEN ? ELSE specialty END
+                            WHERE user_id = ?
+                        ');
+                        $tStmt->execute([$department, $department, $specialty, $specialty, $user['id']]);
+                    }
+                }
+
+                // 3. Log audit event
+                $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+                $aud = $db->prepare('
+                    INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details_json, ip_address)
+                    VALUES (?, "PROFILE_UPDATED", "USER", ?, ?, ?)
+                ');
+                $aud->execute([
+                    $user['id'], 
+                    (string)$user['id'], 
+                    json_encode([
+                        'phone' => $phone, 
+                        'name'  => "$firstName $lastName"
+                    ], JSON_UNESCAPED_UNICODE), 
+                    $ip
+                ]);
+            });
+
+            // Return refreshed profile
+            self::getMe($user);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error'   => 'SERVER_ERROR',
+                'message' => 'Error al actualizar el perfil: ' . $e->getMessage()
+            ], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    /**
+     * DELETE /api/auth/delete-account or /api/auth/me
+     * Permanently deletes user account and safely cleans or reassigns relational constraints
+     */
+    public static function deleteAccount(array $user, array $body): void {
+        $password = $body['password'] ?? '';
+
+        if (empty($password)) {
+            http_response_code(400);
+            echo json_encode([
+                'error'   => 'MISSING_PASSWORD',
+                'message' => 'Debes ingresar tu contraseña actual para confirmar la eliminación definitiva de tu cuenta.'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $pdo = Database::getConnection();
+
+        // 1. Fetch user to verify password and role
+        $stmt = $pdo->prepare('SELECT id, email, password_hash, role, first_name, last_name FROM users WHERE id = ?');
+        $stmt->execute([$user['id']]);
+        $dbUser = $stmt->fetch();
+
+        if (!$dbUser) {
+            http_response_code(404);
+            echo json_encode(['error' => 'USER_NOT_FOUND', 'message' => 'Usuario no encontrado.'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        if (!CryptoService::verifyPassword($password, $dbUser['password_hash'])) {
+            http_response_code(400);
+            echo json_encode([
+                'error'   => 'INVALID_PASSWORD',
+                'message' => 'La contraseña ingresada no es correcta. No se pudo eliminar la cuenta.'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // 2. Prevent removing the last active Administrator
+        if ($dbUser['role'] === 'ADMIN') {
+            $adminCountStmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE role = "ADMIN" AND id != ? AND status = "ACTIVE"');
+            $adminCountStmt->execute([$user['id']]);
+            $otherAdmins = (int)$adminCountStmt->fetchColumn();
+
+            if ($otherAdmins === 0) {
+                http_response_code(400);
+                echo json_encode([
+                    'error'   => 'CANNOT_DELETE_LAST_ADMIN',
+                    'message' => 'No es posible eliminar tu cuenta porque eres el único Administrador activo del sistema.'
+                ], JSON_UNESCAPED_UNICODE);
+                return;
+            }
+        }
+
+        try {
+            Database::transaction(function (PDO $db) use ($dbUser) {
+                $userId = (int)$dbUser['id'];
+                $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+
+                // Audit log of account deletion before removing records
+                $aud = $db->prepare('
+                    INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details_json, ip_address)
+                    VALUES (NULL, "ACCOUNT_PERMANENTLY_DELETED", "USER", ?, ?, ?)
+                ');
+                $aud->execute([
+                    (string)$userId,
+                    json_encode([
+                        'email' => $dbUser['email'],
+                        'name'  => "{$dbUser['first_name']} {$dbUser['last_name']}",
+                        'role'  => $dbUser['role']
+                    ], JSON_UNESCAPED_UNICODE),
+                    $ip
+                ]);
+
+                // Disconnect user_id on audit logs to avoid foreign key restrict/cascade issues
+                $db->prepare('UPDATE audit_logs SET user_id = NULL WHERE user_id = ?')->execute([$userId]);
+
+                // Find alternative administrator for reassignment of graded evaluations/grades
+                $altAdminStmt = $db->prepare('SELECT id FROM users WHERE role = "ADMIN" AND id != ? LIMIT 1');
+                $altAdminStmt->execute([$userId]);
+                $altAdminId = $altAdminStmt->fetchColumn();
+
+                if ($altAdminId) {
+                    $db->prepare('UPDATE grades SET graded_by_user_id = ? WHERE graded_by_user_id = ?')
+                       ->execute([(int)$altAdminId, $userId]);
+                    $db->prepare('UPDATE grade_history SET changed_by_user_id = ? WHERE changed_by_user_id = ?')
+                       ->execute([(int)$altAdminId, $userId]);
+                }
+
+                // If TEACHER, reassign or clean course groups & sessions
+                if ($dbUser['role'] === 'TEACHER') {
+                    $tStmt = $db->prepare('SELECT id FROM teachers WHERE user_id = ?');
+                    $tStmt->execute([$userId]);
+                    $teacherId = $tStmt->fetchColumn();
+
+                    if ($teacherId) {
+                        $altTeacherStmt = $db->prepare('SELECT id FROM teachers WHERE user_id != ? LIMIT 1');
+                        $altTeacherStmt->execute([$userId]);
+                        $altTeacherId = $altTeacherStmt->fetchColumn();
+
+                        if ($altTeacherId) {
+                            $db->prepare('UPDATE course_groups SET teacher_id = ? WHERE teacher_id = ?')
+                               ->execute([(int)$altTeacherId, $teacherId]);
+                            $db->prepare('UPDATE class_sessions SET teacher_id = ? WHERE teacher_id = ?')
+                               ->execute([(int)$altTeacherId, $teacherId]);
+                        } else {
+                            $db->prepare('DELETE FROM course_groups WHERE teacher_id = ?')->execute([$teacherId]);
+                        }
+
+                        $db->prepare('DELETE FROM teachers WHERE id = ?')->execute([$teacherId]);
+                    }
+                }
+
+                // If STUDENT, student record will be removed (cascading attendances, enrollments, grades)
+                if ($dbUser['role'] === 'STUDENT') {
+                    $db->prepare('DELETE FROM students WHERE user_id = ?')->execute([$userId]);
+                }
+
+                // Delete the user record
+                $del = $db->prepare('DELETE FROM users WHERE id = ?');
+                $del->execute([$userId]);
+            });
+
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Tu cuenta ha sido eliminada definitivamente del sistema. Gracias por usar NexusAcademic.'
+            ], JSON_UNESCAPED_UNICODE);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error'   => 'SERVER_ERROR',
+                'message' => 'Error al eliminar la cuenta: ' . $e->getMessage()
+            ], JSON_UNESCAPED_UNICODE);
+        }
     }
 
     /**

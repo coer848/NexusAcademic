@@ -95,6 +95,17 @@ if ($route === 'auth/change-password' && $method === 'POST') {
     AuthController::changePassword($user, $body);
     exit;
 }
+if ($route === 'auth/profile' && $method === 'PUT') {
+    $user = AuthMiddleware::authenticate();
+    AuthController::updateProfile($user, $body);
+    exit;
+}
+if (($route === 'auth/delete-account' && ($method === 'POST' || $method === 'DELETE')) ||
+    ($route === 'auth/me' && $method === 'DELETE')) {
+    $user = AuthMiddleware::authenticate();
+    AuthController::deleteAccount($user, $body);
+    exit;
+}
 
 // 2. ACADEMIC STRUCTURE
 if ($route === 'academic/institution') {

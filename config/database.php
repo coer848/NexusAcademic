@@ -8,6 +8,8 @@ require_once __DIR__ . '/config.php';
 class Database {
     private static ?PDO $instance = null;
 
+    private static bool $schemaMigrated = false;
+
     /**
      * Get or initialize the PDO connection singleton
      */
@@ -39,6 +41,22 @@ class Database {
                     error_log('Database Connection Error: ' . $e->getMessage());
                     throw $e;
                 }
+            }
+        }
+
+        // Automatic schema self-healing: ensure phone column exists in users table
+        if (!self::$schemaMigrated && self::$instance !== null) {
+            self::$schemaMigrated = true;
+            try {
+                $checkTable = self::$instance->query("SHOW TABLES LIKE 'users'")->fetch();
+                if ($checkTable) {
+                    $checkCol = self::$instance->query("SHOW COLUMNS FROM `users` LIKE 'phone'")->fetch();
+                    if (!$checkCol) {
+                        self::$instance->exec("ALTER TABLE `users` ADD COLUMN `phone` VARCHAR(30) DEFAULT NULL AFTER `last_name`");
+                    }
+                }
+            } catch (Throwable $ignore) {
+                // Ignore if tables are not initialized yet
             }
         }
 
