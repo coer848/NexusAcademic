@@ -80,7 +80,8 @@ class AttendanceController {
             $attendances = AttendanceService::getSessionAttendance($user, $id);
             Response::json($attendances);
         } catch (Exception $e) {
-            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
+            $rawCode = $e->getCode();
+            $code = (is_numeric($rawCode) && (int)$rawCode >= 400 && (int)$rawCode < 600) ? (int)$rawCode : 400;
             Response::error($e->getMessage(), 'GET_ATTENDANCE_ERROR', $code);
         }
     }
@@ -91,7 +92,8 @@ class AttendanceController {
             $history = AttendanceService::getMyAttendanceHistory($user);
             Response::json($history);
         } catch (Exception $e) {
-            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
+            $rawCode = $e->getCode();
+            $code = (is_numeric($rawCode) && (int)$rawCode >= 400 && (int)$rawCode < 600) ? (int)$rawCode : 400;
             Response::error($e->getMessage(), 'ATTENDANCE_HISTORY_ERROR', $code);
         }
     }

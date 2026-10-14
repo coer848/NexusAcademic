@@ -65,6 +65,26 @@
           </div>
         </div>
 
+        <!-- Theme Switcher (Dark / Light Mode) -->
+        <button class="btn-theme-toggle" id="btnThemeToggle" title="Alternar Modo Oscuro / Claro" aria-label="Alternar tema">
+          <svg class="svg-icon theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+          <svg class="svg-icon theme-icon-light hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </button>
+
         <div id="userProfileBadge" class="user-pill hidden" title="Ver mi información y perfil">
           <div class="user-avatar-mini" id="userAvatarText">AD</div>
           <div class="user-pill-info">
@@ -1530,6 +1550,15 @@
           <p class="view-subtitle">Cobertura absoluta y confidencial. Monitoreo de base de datos MySQL, gestión de cuentas, llaves institucionales y auditoría forense.</p>
         </div>
         <div class="header-actions">
+          <button class="btn btn-primary btn-sm" id="btnDevOpenCreateUser">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="19" y1="8" x2="19" y2="14" />
+              <line x1="22" y1="11" x2="16" y2="11" />
+            </svg>
+            Crear Usuario / Directivo
+          </button>
           <button class="btn btn-secondary btn-sm" id="btnRefreshMasterDevData">
             <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
@@ -2261,6 +2290,79 @@
         <div class="modal-actions">
           <button type="button" class="btn btn-glass" id="btnCancelDevEditUser">Cancelar</button>
           <button type="submit" class="btn btn-primary" id="btnSaveDevEditUser">Guardar Cambios Maestros</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 9: SuperAdmin / Master Dev Create User -->
+  <div class="modal-overlay hidden" id="modalDevCreateUser">
+    <div class="modal-box glass-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <line x1="19" y1="8" x2="19" y2="14" />
+            <line x1="22" y1="11" x2="16" y2="11" />
+          </svg>
+          <h3>Crear Usuario Institucional / Directivo</h3>
+        </div>
+        <button class="btn-close-modal" id="btnCloseDevCreateUserModal">&times;</button>
+      </div>
+
+      <form id="formDevCreateUser" class="modal-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="devNewFirstName">Nombres</label>
+            <input type="text" id="devNewFirstName" placeholder="Ej. Carlos Eduardo" required>
+          </div>
+          <div class="form-group">
+            <label for="devNewLastName">Apellidos</label>
+            <input type="text" id="devNewLastName" placeholder="Ej. Gómez Silva" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="devNewEmail">Correo Institucional</label>
+            <input type="email" id="devNewEmail" placeholder="directivo@nexus.edu" required>
+          </div>
+          <div class="form-group">
+            <label for="devNewPhone">Teléfono Móvil (Único)</label>
+            <input type="tel" id="devNewPhone" placeholder="+57 300 123 4567" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="devNewRole">Rol Asignado</label>
+            <select id="devNewRole" class="form-select">
+              <option value="ADMIN">Directivo / Rector / Supervisor / Admin</option>
+              <option value="TEACHER">Docente / Profesor</option>
+              <option value="STUDENT">Estudiante</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="devNewPassword">Contraseña Inicial</label>
+            <input type="text" id="devNewPassword" placeholder="Mínimo 6 caracteres" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="devNewCode">Código Personal / Institucional (Opcional)</label>
+            <input type="text" id="devNewCode" placeholder="Ej. REC-001, DOC-405, EST-2026-001">
+          </div>
+          <div class="form-group">
+            <label for="devNewDeptCareer">Departamento, Facultad o Cargo</label>
+            <input type="text" id="devNewDeptCareer" placeholder="Ej. Rectoría General, Coordinación Académica...">
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-glass" id="btnCancelDevCreateUser">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitDevCreateUser">Dar de Alta Usuario</button>
         </div>
       </form>
     </div>

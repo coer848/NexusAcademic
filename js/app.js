@@ -2389,6 +2389,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeDevModal = () => modalDevEdit && modalDevEdit.classList.add('hidden');
   if (btnCloseDevEdit) btnCloseDevEdit.addEventListener('click', closeDevModal);
   if (btnCancelDevEdit) btnCancelDevEdit.addEventListener('click', closeDevModal);
+
+  // Master Dev Create User Modal
+  const btnOpenDevCreate = document.getElementById('btnDevOpenCreateUser');
+  const modalDevCreate = document.getElementById('modalDevCreateUser');
+  const btnCloseDevCreate = document.getElementById('btnCloseDevCreateUserModal');
+  const btnCancelDevCreate = document.getElementById('btnCancelDevCreateUser');
+  const formDevCreate = document.getElementById('formDevCreateUser');
+  const closeDevCreateModal = () => modalDevCreate && modalDevCreate.classList.add('hidden');
+
+  if (btnOpenDevCreate && modalDevCreate) {
+    btnOpenDevCreate.addEventListener('click', () => {
+      formDevCreate && formDevCreate.reset();
+      modalDevCreate.classList.remove('hidden');
+    });
+  }
+  if (btnCloseDevCreate) btnCloseDevCreate.addEventListener('click', closeDevCreateModal);
+  if (btnCancelDevCreate) btnCancelDevCreate.addEventListener('click', closeDevCreateModal);
+  if (formDevCreate) formDevCreate.addEventListener('submit', handleDevCreateUserSubmit);
+
+  // Initialize Theme System
+  initThemeSystem();
 });
 
 // ================= MASTER DEVELOPER & SUPERADMIN CONTROLLER =================
@@ -2648,4 +2669,84 @@ window.deleteDevUser = async function(userId, email) {
     showToast(err.message, 'error');
   }
 };
+
+async function handleDevCreateUserSubmit(e) {
+  e.preventDefault();
+  const firstName = document.getElementById('devNewFirstName').value.trim();
+  const lastName = document.getElementById('devNewLastName').value.trim();
+  const email = document.getElementById('devNewEmail').value.trim();
+  const phone = document.getElementById('devNewPhone').value.trim();
+  const role = document.getElementById('devNewRole').value;
+  const password = document.getElementById('devNewPassword').value.trim();
+  const code = document.getElementById('devNewCode').value.trim();
+  const deptCareer = document.getElementById('devNewDeptCareer').value.trim();
+
+  if (!email || !firstName || !lastName || !password) {
+    showToast('Por favor complete todos los campos requeridos.', 'warning');
+    return;
+  }
+
+  try {
+    const res = await apiFetch('/api/dev/users', {
+      method: 'POST',
+      body: {
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+        phone: phone,
+        role: role,
+        password: password,
+        code: code,
+        department_or_career: deptCareer
+      }
+    });
+
+    sfx.playSuccess();
+    showToast(res.message || 'Usuario institucional dado de alta correctamente.', 'success');
+    document.getElementById('modalDevCreateUser').classList.add('hidden');
+    document.getElementById('formDevCreateUser').reset();
+    await loadDevUsersTable();
+    await loadMasterDevDashboard();
+  } catch (err) {
+    sfx.playError();
+    showToast(err.message, 'error');
+  }
+}
+
+// ================= THEME SYSTEM (LIGHT / DARK DUAL MODE) =================
+function initThemeSystem() {
+  const savedTheme = localStorage.getItem('nexus_academic_theme') || 'dark';
+  applyTheme(savedTheme);
+
+  const btnToggle = document.getElementById('btnThemeToggle');
+  if (btnToggle && !btnToggle.dataset.bound) {
+    btnToggle.dataset.bound = 'true';
+    btnToggle.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const nextTheme = current === 'dark' ? 'light' : 'dark';
+      applyTheme(nextTheme);
+      sfx.playSuccess();
+      showToast(`Modo visual cambiado a ${nextTheme === 'light' ? 'Claro' : 'Oscuro'}.`, 'info');
+    });
+  }
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('nexus_academic_theme', theme);
+  const iconDark = document.querySelector('.theme-icon-dark');
+  const iconLight = document.querySelector('.theme-icon-light');
+  if (iconDark && iconLight) {
+    if (theme === 'light') {
+      iconDark.classList.add('hidden');
+      iconLight.classList.remove('hidden');
+    } else {
+      iconDark.classList.remove('hidden');
+      iconLight.classList.add('hidden');
+    }
+  }
+}
+
+// Immediate Theme Execution on Script Parse
+initThemeSystem();
 

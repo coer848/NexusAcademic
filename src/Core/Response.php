@@ -45,7 +45,8 @@ class Response {
     /**
      * Send standard error response
      */
-    public static function error(string $message, string $errorCode = 'BAD_REQUEST', int $statusCode = 400, ?array $details = null): void {
+    public static function error(string $message, string $errorCode = 'BAD_REQUEST', $statusCode = 400, ?array $details = null): void {
+        $code = (is_numeric($statusCode) && (int)$statusCode >= 400 && (int)$statusCode < 600) ? (int)$statusCode : 400;
         $payload = [
             'success' => false,
             'error'   => $errorCode,
@@ -54,7 +55,7 @@ class Response {
         if ($details !== null) {
             $payload['details'] = $details;
         }
-        self::json($payload, $statusCode);
+        self::json($payload, $code);
     }
 
     /**

@@ -122,7 +122,7 @@ class AttendanceModel {
         $stmt = $pdo->prepare('
             SELECT 
                 a.*,
-                cs.topic, cs.created_at AS session_date,
+                cs.topic, cs.started_at AS session_date,
                 cg.group_code, cg.classroom,
                 s.name AS subject_name, s.code AS subject_code,
                 u.first_name AS teacher_first_name, u.last_name AS teacher_last_name

@@ -55,6 +55,65 @@
   --shadow-glow: 0 4px 20px var(--primary-glow);
 }
 
+/* Light Mode Design Tokens (WCAG AA Compliant & Professional EdTech Neutral) */
+[data-theme="light"] {
+  --bg-dark: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #f1f5f9;
+  --bg-card: rgba(255, 255, 255, 0.96);
+  --bg-card-hover: #f8fafc;
+  --bg-glass-input: #ffffff;
+  
+  --border-glass: rgba(15, 23, 42, 0.09);
+  --border-glass-bright: rgba(15, 23, 42, 0.16);
+  --border-accent: rgba(79, 70, 229, 0.35);
+
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-glow: rgba(79, 70, 229, 0.16);
+  --primary-light: #6366f1;
+  
+  --cyan: #0284c7;
+  --cyan-glow: rgba(2, 132, 199, 0.16);
+  
+  --emerald: #059669;
+  --emerald-glow: rgba(5, 150, 105, 0.16);
+  
+  --amber: #d97706;
+  --amber-glow: rgba(217, 119, 6, 0.16);
+  
+  --rose: #dc2626;
+  --rose-glow: rgba(220, 38, 38, 0.16);
+
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #64748b;
+  --text-bright: #020617;
+
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  --shadow-elevated: 0 10px 25px -3px rgba(15, 23, 42, 0.07), 0 4px 6px -4px rgba(15, 23, 42, 0.03), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  --shadow-modal: 0 25px 50px -12px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.09);
+  --shadow-glass: var(--shadow-card);
+  --shadow-glow: 0 4px 20px var(--primary-glow);
+}
+
+[data-theme="light"] body::before {
+  background: radial-gradient(ellipse 70% 320px at 50% -80px, rgba(79, 70, 229, 0.07), transparent 70%);
+}
+
+[data-theme="light"] .navbar {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+[data-theme="light"] .modal-overlay {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+[data-theme="light"] .glass-card {
+  background: var(--bg-card);
+  border-color: var(--border-glass);
+}
+
 /* ================= Reset & Global Layout ================= */
 * {
   margin: 0;
@@ -241,6 +300,45 @@ body::before {
 .btn-mobile-nav-toggle svg {
   width: 20px;
   height: 20px;
+}
+
+/* Theme Toggle Button (Light / Dark Mode) */
+.btn-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-glass-bright);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  padding: 0;
+  box-shadow: var(--shadow-card);
+}
+
+.btn-theme-toggle:hover {
+  color: var(--primary-light);
+  border-color: var(--primary);
+  background: var(--bg-card-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.btn-theme-toggle:active {
+  transform: scale(0.95);
+}
+
+.btn-theme-toggle svg {
+  width: 19px;
+  height: 19px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-theme-toggle:hover svg {
+  transform: rotate(20deg);
 }
 
 .live-clock {

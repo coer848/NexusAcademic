@@ -23,6 +23,12 @@ $router->group('dev', function (Router $r) {
         RbacMiddleware::handle('SUPERADMIN', 'ADMIN')
     ]);
 
+    // Create user directly (SuperAdmin / Admin)
+    $r->post('users', [DevController::class, 'createUser'], [
+        AuthMiddleware::handle(),
+        RbacMiddleware::handle('SUPERADMIN', 'ADMIN')
+    ]);
+
     // User status toggle (ACTIVE / INACTIVE)
     $r->put('users/{id:\d+}/status', [DevController::class, 'updateUserStatus'], [
         AuthMiddleware::handle(),
