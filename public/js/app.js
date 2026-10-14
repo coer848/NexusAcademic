@@ -125,17 +125,29 @@ function showToast(message, type = 'success') {
 }
 
 // ================= API BASE URL & CLIENT HELPER =================
-// Automatically detects backend URL if running via VS Code Live Server or static server
+// Automatically detects backend URL whether running on XAMPP (e.g. /NexusAcademic), localhost:3000, or custom domain
 const API_BASE_URL = (() => {
   if (typeof window === 'undefined') return '';
-  const { protocol, port, hostname } = window.location;
-  if (protocol === 'file:') return 'http://localhost:3000';
-  if (port === '3000' || port === '' || !port) return '';
-  return `http://${hostname || 'localhost'}:3000`;
+  const { protocol, port, hostname, pathname } = window.location;
+  if (protocol === 'file:') return 'http://localhost/NexusAcademic';
+  
+  // Detect if hosted under a subdirectory in XAMPP (e.g. /NexusAcademic/ or /NexusAcademic/public/)
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments.length > 0 && segments[0].toLowerCase() === 'nexusacademic') {
+    return '/NexusAcademic';
+  }
+  
+  if (port === '3000') return '';
+  return '';
 })();
 
 async function apiFetch(endpoint, options = {}) {
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+  let cleanEndpoint = endpoint;
+  if (!cleanEndpoint.startsWith('http')) {
+    if (!cleanEndpoint.startsWith('/')) cleanEndpoint = '/' + cleanEndpoint;
+    cleanEndpoint = `${API_BASE_URL}${cleanEndpoint}`;
+  }
+  const url = cleanEndpoint;
   const headers = options.headers || {};
   if (AppState.token) {
     headers['Authorization'] = `Bearer ${AppState.token}`;
