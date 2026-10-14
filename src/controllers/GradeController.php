@@ -163,6 +163,12 @@ class GradeController {
                 throw new Exception("La calificación debe estar comprendida entre 0.0 y {$maxScore}.", 400);
             }
 
+            // Anti-IDOR: verify that the student being graded is enrolled in the group
+            $isEnrolled = AcademicModel::isStudentEnrolled((int)$evalObj['group_id'], $studentId);
+            if (!$isEnrolled) {
+                throw new Exception('El estudiante indicado no se encuentra matriculado en este curso.', 400);
+            }
+
             $data['changed_by_user_id'] = (int)$user['id'];
             $data['ip_address'] = $ip;
 
@@ -209,16 +215,19 @@ class GradeController {
                 $studentId = (int)($g['student_id'] ?? 0);
                 $score = isset($g['score']) ? (float)$g['score'] : null;
                 if ($studentId && $score !== null && GradeService::isValidScore($score, 0.0, $maxScore)) {
-                    GradeModel::saveGrade([
-                        'evaluation_id'      => $evalId,
-                        'student_id'         => $studentId,
-                        'score'              => $score,
-                        'feedback'           => $g['feedback'] ?? null,
-                        'change_reason'      => $g['change_reason'] ?? 'Calificación masiva de grupo',
-                        'changed_by_user_id' => (int)$user['id'],
-                        'ip_address'         => $ip
-                    ]);
-                    $processedCount++;
+                    // Anti-IDOR check on batch enrollment
+                    if (AcademicModel::isStudentEnrolled((int)$evalObj['group_id'], $studentId)) {
+                        GradeModel::saveGrade([
+                            'evaluation_id'      => $evalId,
+                            'student_id'         => $studentId,
+                            'score'              => $score,
+                            'feedback'           => $g['feedback'] ?? null,
+                            'change_reason'      => $g['change_reason'] ?? 'Calificación masiva de grupo',
+                            'changed_by_user_id' => (int)$user['id'],
+                            'ip_address'         => $ip
+                        ]);
+                        $processedCount++;
+                    }
                 }
             }
 
@@ -269,7 +278,22 @@ class GradeController {
 
     public static function getGradeAuditHistory($req, $gradeId = null): void {
         try {
-            $id = ($req instanceof Request) ? (int)$req->getParam('id') : (int)$gradeId;
+            $user = ($req instanceof Request) ? $req->getUser() : (array)$req;
+            $id   = ($req instanceof Request) ? (int)$req->getParam('id') : (int)$gradeId;
+
+            $grade = GradeModel::getGradeById($id);
+            if (!$grade) {
+                throw new Exception('Registro de calificación no encontrado.', 404);
+            }
+
+            // Anti-IDOR Authorization
+            if ($user['role'] === 'STUDENT' && (int)$grade['student_id'] !== (int)$user['studentId']) {
+                throw new Exception('Acceso denegado: No puede consultar el historial de calificaciones de otros estudiantes.', 403);
+            }
+            if ($user['role'] === 'TEACHER' && (int)$grade['teacher_id'] !== (int)$user['teacherId']) {
+                throw new Exception('Acceso denegado: No es el docente asignado a esta asignatura.', 403);
+            }
+
             $history = GradeModel::getGradeHistory($id);
             Response::json($history);
         } catch (Exception $e) {

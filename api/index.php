@@ -8,11 +8,15 @@
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 
-// CORS Headers
+// CORS & OWASP Security Headers
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 header("Content-Type: application/json; charset=UTF-8");
+header("X-Content-Type-Options: nosniff");
+header("X-Frame-Options: SAMEORIGIN");
+header("X-XSS-Protection: 1; mode=block");
+header("Referrer-Policy: strict-origin-when-cross-origin");
 
 // Handle OPTIONS preflight request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -72,6 +76,11 @@ use NexusAcademic\Core\Router;
 // Bootstrap HTTP Request & Router
 $request = new Request();
 $router  = new Router();
+
+// Global Rate Limiting across all API routes (Mitigates Scraping & DoS)
+$router->use(function (Request $req) {
+    \NexusAcademic\Middleware\RateLimitMiddleware::check($req, RATE_LIMIT_GLOBAL_MAX, RATE_LIMIT_GLOBAL_DECAY, 'api_global');
+});
 
 // Load Modular Routes
 $registerRoutes = require_once __DIR__ . '/../routes/api.php';

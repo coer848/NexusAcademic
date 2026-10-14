@@ -47,11 +47,20 @@ class RateLimitMiddleware {
 
         @file_put_contents($file, json_encode($data), LOCK_EX);
 
+        $remaining = max(0, $maxAttempts - $data['count']);
+        $resetTime = $data['first_attempt'] + $decaySeconds;
+
+        if (!headers_sent()) {
+            header("X-RateLimit-Limit: {$maxAttempts}");
+            header("X-RateLimit-Remaining: {$remaining}");
+            header("X-RateLimit-Reset: {$resetTime}");
+        }
+
         if ($data['count'] > $maxAttempts) {
-            $retryAfter = $decaySeconds - ($now - $data['first_attempt']);
+            $retryAfter = max(1, $resetTime - $now);
             header("Retry-After: {$retryAfter}");
-            Response::error('Demasiadas solicitudes. Por favor intente nuevamente en unos minutos.', 'RATE_LIMIT_EXCEEDED', 429, [
-                'retry_after_seconds' => max(1, $retryAfter)
+            Response::error('Demasiadas solicitudes. Por favor espere antes de intentar nuevamente.', 'RATE_LIMIT_EXCEEDED', 429, [
+                'retry_after_seconds' => $retryAfter
             ]);
         }
     }

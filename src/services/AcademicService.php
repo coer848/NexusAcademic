@@ -86,6 +86,12 @@ class AcademicService {
         if ($user['role'] === 'TEACHER' && (int)$group['teacher_id'] !== (int)$user['teacherId']) {
             throw new Exception('No tiene permisos para acceder a este grupo.', 403);
         }
+        if ($user['role'] === 'STUDENT') {
+            $studentId = (int)($user['studentId'] ?? 0);
+            if (!$studentId || !AcademicModel::isStudentEnrolled($groupId, $studentId)) {
+                throw new Exception('Acceso denegado: Usted no se encuentra matriculado en este grupo.', 403);
+            }
+        }
 
         $pdo = Database::getConnection();
 

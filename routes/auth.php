@@ -13,11 +13,11 @@ use NexusAcademic\Middleware\RateLimitMiddleware;
 $router->group('auth', function (Router $r) {
     // Public authentication endpoints with rate limiting
     $r->post('register', [AuthController::class, 'register'], [
-        RateLimitMiddleware::handle(10, 60, 'reg')
+        RateLimitMiddleware::handle(RATE_LIMIT_AUTH_MAX, RATE_LIMIT_AUTH_DECAY, 'reg')
     ]);
 
     $r->post('login', [AuthController::class, 'login'], [
-        RateLimitMiddleware::handle(15, 60, 'login')
+        RateLimitMiddleware::handle(RATE_LIMIT_AUTH_MAX, RATE_LIMIT_AUTH_DECAY, 'login')
     ]);
 
     // Authenticated profile & session endpoints

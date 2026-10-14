@@ -9,10 +9,17 @@ require_once __DIR__ . '/../../config/config.php';
 class CryptoService {
 
     /**
-     * Hash password using standard bcrypt
+     * Hash password using Argon2id or Bcrypt with cost >= 12 (OWASP ASVS Standard)
      */
     public static function hashPassword(string $password): string {
-        return password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
+        if (defined('PASSWORD_ARGON2ID')) {
+            return password_hash($password, PASSWORD_ARGON2ID, [
+                'memory_cost' => 65536,
+                'time_cost'   => 4,
+                'threads'     => 1
+            ]);
+        }
+        return password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
     }
 
     /**

@@ -97,6 +97,21 @@ class GradeModel {
         return $row ?: null;
     }
 
+    public static function getGradeById(int $gradeId): ?array {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('
+            SELECT g.*, ev.group_id, cg.teacher_id
+            FROM grades g
+            JOIN evaluations ev ON g.evaluation_id = ev.id
+            JOIN course_groups cg ON ev.group_id = cg.id
+            WHERE g.id = ?
+            LIMIT 1
+        ');
+        $stmt->execute([$gradeId]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
     public static function saveGrade(array $data): int {
         return Database::transaction(function (PDO $db) use ($data) {
             $evalId    = (int)$data['evaluation_id'];
