@@ -16,13 +16,13 @@ const AppState = {
   qrCountdownTimer: null,
   qrSecondsRemaining: 20,
   attendancePollInterval: null,
-  
+
   // Camera & Video Stream State
   cameraStream: null,
   isCameraRunning: false,
   scanAnimFrameId: null,
   isScanCooldown: false,
-  
+
   // Geolocation
   userCoordinates: { lat: 4.60971, lng: -74.08175 }
 };
@@ -69,7 +69,7 @@ class AudioEngine {
       osc2.start();
       osc1.stop(this.ctx.currentTime + 0.35);
       osc2.stop(this.ctx.currentTime + 0.35);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   playError() {
@@ -92,7 +92,7 @@ class AudioEngine {
 
       osc.start();
       osc.stop(this.ctx.currentTime + 0.38);
-    } catch (e) {}
+    } catch (e) { }
   }
 }
 
@@ -130,13 +130,13 @@ const API_BASE_URL = (() => {
   if (typeof window === 'undefined') return '';
   const { protocol, port, hostname, pathname } = window.location;
   if (protocol === 'file:') return 'http://localhost/NexusAcademic';
-  
+
   // Detect if hosted under a subdirectory in XAMPP (e.g. /NexusAcademic/ or /NexusAcademic/public/)
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length > 0 && segments[0].toLowerCase() === 'nexusacademic') {
     return '/NexusAcademic';
   }
-  
+
   if (port === '3000') return '';
   return '';
 })();
@@ -161,7 +161,7 @@ async function apiFetch(endpoint, options = {}) {
 
   try {
     const res = await fetch(url, options);
-    
+
     // Safely parse body text to avoid "Unexpected end of JSON input" on empty/HTML responses
     const text = await res.text();
     let data = null;
@@ -175,10 +175,10 @@ async function apiFetch(endpoint, options = {}) {
     }
 
     if (!res.ok) {
-      const errorMsg = (data && (data.message || data.error)) 
-        || (res.status === 404 
-            ? `Ruta no encontrada (${endpoint}). Verifica que el servidor backend esté corriendo.` 
-            : `Error en la petición (${res.status} ${res.statusText || 'Error del servidor'})`);
+      const errorMsg = (data && (data.message || data.error))
+        || (res.status === 404
+          ? `Ruta no encontrada (${endpoint}). Verifica que el servidor backend esté corriendo.`
+          : `Error en la petición (${res.status} ${res.statusText || 'Error del servidor'})`);
       throw new Error(errorMsg);
     }
 
@@ -191,31 +191,15 @@ async function apiFetch(endpoint, options = {}) {
   }
 }
 
-// ================= LIVE CLOCK (INSTITUTIONAL CAMPUS WALL CLOCK) =================
+// ================= LIVE CLOCK =================
 function initLiveClock() {
   const timeDisplay = document.getElementById('timeDisplay');
-  const dateDisplay = document.getElementById('clockDateDisplay');
-  const clockContainer = document.getElementById('liveClock');
-
-  if (!timeDisplay && !clockContainer) return;
-
   function update() {
     const now = new Date();
-    if (timeDisplay) {
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      timeDisplay.textContent = `${hours}:${minutes}:${seconds}`;
-    }
-    if (dateDisplay) {
-      const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      dateDisplay.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
-    }
+    timeDisplay.textContent = now.toLocaleTimeString();
   }
-
-  update();
   setInterval(update, 1000);
+  update();
 }
 
 // ================= GEOLOCATION CAPTURE =================
@@ -263,20 +247,6 @@ function showView(viewId) {
     }
   });
 
-  // Auto-close mobile navigation drawer if open
-  const mainNav = document.getElementById('mainNavLinks');
-  const mobileToggle = document.getElementById('btnMobileNavToggle');
-  if (mainNav && mainNav.classList.contains('mobile-open')) {
-    mainNav.classList.remove('mobile-open');
-    if (mobileToggle) {
-      mobileToggle.setAttribute('aria-expanded', 'false');
-      const iconHam = mobileToggle.querySelector('.icon-hamburger');
-      const iconClose = mobileToggle.querySelector('.icon-close');
-      if (iconHam) iconHam.classList.remove('hidden');
-      if (iconClose) iconClose.classList.add('hidden');
-    }
-  }
-
   if (viewId === 'viewProfile') {
     loadUserProfile();
   }
@@ -309,32 +279,28 @@ function updateNavBar(role) {
 
   const profileBtnHtml = `
     <button class="nav-btn" onclick="showView('viewProfile')" id="navBtnProfile" title="Ver mi información y perfil">
-      <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-      <span>Mi Perfil</span>
+      <i class="fa-solid fa-id-card"></i> Mi Perfil
     </button>
   `;
 
   if (role === 'ADMIN') {
     linksContainer.innerHTML = `
       <button class="nav-btn active" onclick="showView('viewAdmin')">
-        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
-        <span>Panel Admin</span>
+        <i class="fa-solid fa-crown"></i> Panel Admin
       </button>
       ${profileBtnHtml}
     `;
   } else if (role === 'TEACHER') {
     linksContainer.innerHTML = `
       <button class="nav-btn active" onclick="showView('viewTeacher')">
-        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20v14H2z"/><path d="M8 21h8M12 17v4"/><circle cx="10" cy="8" r="2"/></svg>
-        <span>Mis Clases & Asistencia</span>
+        <i class="fa-solid fa-chalkboard-user"></i> Mis Clases & Asistencia
       </button>
       ${profileBtnHtml}
     `;
   } else if (role === 'STUDENT') {
     linksContainer.innerHTML = `
       <button class="nav-btn active" onclick="showView('viewStudent')">
-        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-        <span>Mi Portal Estudiantil</span>
+        <i class="fa-solid fa-graduation-cap"></i> Mi Portal Estudiantil
       </button>
       ${profileBtnHtml}
     `;
@@ -885,7 +851,7 @@ async function loadAdminDashboard() {
 }
 
 // Admin Modal Actions
-window.openCreateGroupModal = async function() {
+window.openCreateGroupModal = async function () {
   document.getElementById('modalGroupTitle').textContent = 'Crear Nuevo Grupo / Clase';
   document.getElementById('groupEditId').value = '';
   document.getElementById('inputGroupCode').value = '';
@@ -897,7 +863,7 @@ window.openCreateGroupModal = async function() {
   document.getElementById('modalGroup').classList.remove('hidden');
 };
 
-window.openEditGroupModal = async function(groupId) {
+window.openEditGroupModal = async function (groupId) {
   try {
     document.getElementById('modalGroupTitle').textContent = 'Editar Asignación de Grupo';
     document.getElementById('groupEditId').value = groupId;
@@ -966,7 +932,7 @@ async function submitGroupForm(e) {
   }
 }
 
-window.deleteGroupRecord = async function(groupId) {
+window.deleteGroupRecord = async function (groupId) {
   if (!confirm('¿Está seguro de eliminar este grupo y sus asignaciones?')) return;
   try {
     await apiFetch(`/api/academic/groups/${groupId}`, { method: 'DELETE' });
@@ -978,7 +944,7 @@ window.deleteGroupRecord = async function(groupId) {
 };
 
 // Teacher Edit Modal Actions
-window.openEditTeacherModal = function(id, firstName, lastName, dept, specialty) {
+window.openEditTeacherModal = function (id, firstName, lastName, dept, specialty) {
   document.getElementById('teacherEditId').value = id;
   document.getElementById('inputTeacherFirstName').value = firstName;
   document.getElementById('inputTeacherLastName').value = lastName;
@@ -1008,7 +974,7 @@ async function submitTeacherForm(e) {
 }
 
 // Enroll Student Modal Actions
-window.openEnrollmentModal = async function() {
+window.openEnrollmentModal = async function () {
   try {
     const [students, groups] = await Promise.all([
       apiFetch('/api/academic/students'),
@@ -1046,7 +1012,7 @@ async function submitEnrollmentForm(e) {
 }
 
 // New Subject Modal
-window.openSubjectModal = function() {
+window.openSubjectModal = function () {
   document.getElementById('inputSubjectCode').value = '';
   document.getElementById('inputSubjectName').value = '';
   document.getElementById('inputSubjectCredits').value = 3;
@@ -1136,7 +1102,7 @@ async function onTeacherGroupSelected(groupId) {
 }
 
 // Teacher Course Management (Teacher writes their own subject directly)
-window.openTeacherCreateCourseModal = function() {
+window.openTeacherCreateCourseModal = function () {
   document.getElementById('modalTeacherCourseTitle').textContent = 'Crear Mi Asignatura a Impartir';
   document.getElementById('teacherCourseEditGroupId').value = '';
   document.getElementById('inputTeacherSubName').value = '';
@@ -1148,7 +1114,7 @@ window.openTeacherCreateCourseModal = function() {
   document.getElementById('modalTeacherCourse').classList.remove('hidden');
 };
 
-window.openTeacherEditCourseModal = function() {
+window.openTeacherEditCourseModal = function () {
   if (!AppState.selectedGroupId) {
     showToast('Por favor seleccione una clase primero.', 'warning');
     return;
@@ -1167,7 +1133,7 @@ window.openTeacherEditCourseModal = function() {
   document.getElementById('modalTeacherCourse').classList.remove('hidden');
 };
 
-window.teacherDeleteCurrentCourse = async function() {
+window.teacherDeleteCurrentCourse = async function () {
   if (!AppState.selectedGroupId) {
     showToast('No hay una asignatura seleccionada.', 'warning');
     return;
@@ -1332,7 +1298,7 @@ async function rotateTeacherQR() {
 
     const nonceLabel = document.getElementById('activeNonceLabel');
     if (nonceLabel) nonceLabel.textContent = payload.nonce;
-    
+
     const sigLabel = document.getElementById('activeSignatureLabel');
     if (sigLabel) sigLabel.textContent = payload.signature.substring(0, 24) + '...';
 
@@ -1434,11 +1400,11 @@ async function pollLiveSessionAttendance(sessionId) {
       </tr>
     `).join('');
 
-  } catch (err) {}
+  } catch (err) { }
 }
 
 // Fullscreen / Theater QR Mode
-window.openFullscreenQR = function() {
+window.openFullscreenQR = function () {
   if (!AppState.activeSession) {
     showToast('Inicie una sesión de clase para proyectar el código QR.', 'warning');
     return;
@@ -1452,7 +1418,7 @@ window.openFullscreenQR = function() {
   }
 };
 
-window.closeFullscreenQR = function() {
+window.closeFullscreenQR = function () {
   const modal = document.getElementById('modalFullscreenQR');
   if (modal) modal.classList.add('hidden');
 };
@@ -1502,18 +1468,18 @@ async function loadTeacherGradebookMatrix(groupId) {
             </div>
           </td>
           ${grades.map(g => {
-            const hasGrade = g.isGraded;
-            const scoreText = hasGrade ? Number(g.score).toFixed(1) : '+ Calificar';
-            const btnClass = hasGrade ? 'score-badge-btn' : 'score-badge-btn empty';
+        const hasGrade = g.isGraded;
+        const scoreText = hasGrade ? Number(g.score).toFixed(1) : '+ Calificar';
+        const btnClass = hasGrade ? 'score-badge-btn' : 'score-badge-btn empty';
 
-            return `
+        return `
               <td>
                 <button class="${btnClass}" onclick="openGradeModal(${g.evaluationId}, ${student.student_id}, '${student.first_name} ${student.last_name}', '${g.name}', ${hasGrade ? g.score : 'null'})" title="Haga clic para ingresar o modificar nota">
                   ${scoreText}
                 </button>
               </td>
             `;
-          }).join('')}
+      }).join('')}
           <td>
             <span class="average-cell ${row.isPassing ? 'passing' : 'failing'}">
               ${row.weightedAverage != null ? row.weightedAverage.toFixed(2) : '-'}
@@ -1561,10 +1527,10 @@ async function loadTeacherEvaluations(groupId) {
         </td>
       </tr>
     `).join('');
-  } catch (err) {}
+  } catch (err) { }
 }
 
-window.deleteEvaluationRecord = async function(evalId) {
+window.deleteEvaluationRecord = async function (evalId) {
   if (!confirm('¿Está seguro de eliminar esta evaluación y todas las calificaciones asociadas?')) return;
   try {
     await apiFetch(`/api/evaluations/${evalId}`, { method: 'DELETE' });
@@ -1576,7 +1542,7 @@ window.deleteEvaluationRecord = async function(evalId) {
   }
 };
 
-window.openCreateEvaluationModal = function() {
+window.openCreateEvaluationModal = function () {
   if (!AppState.selectedGroupId) {
     showToast('Por favor seleccione o cree una asignatura primero.', 'warning');
     return;
@@ -1635,11 +1601,11 @@ async function loadTeacherGradeHistory() {
         <td>${h.change_reason}</td>
       </tr>
     `).join('');
-  } catch (err) {}
+  } catch (err) { }
 }
 
 // Grade Modal Actions
-window.openGradeModal = function(evalId, studentId, studentName, evalName, currentScore) {
+window.openGradeModal = function (evalId, studentId, studentName, evalName, currentScore) {
   document.getElementById('gradeEvalId').value = evalId;
   document.getElementById('gradeStudentId').value = studentId;
   document.getElementById('gradeOldScore').value = currentScore != null ? currentScore : '';
@@ -1780,7 +1746,7 @@ async function loadStudentDashboard() {
 }
 
 // Student Self-Enrollment Catalog Methods
-window.loadAvailableCourses = async function() {
+window.loadAvailableCourses = async function () {
   try {
     const grid = document.getElementById('availableCoursesGrid');
     if (!grid) return;
@@ -1805,10 +1771,10 @@ window.loadAvailableCourses = async function() {
           <span><i class="fa-solid fa-users"></i> ${c.enrolled_count || 0} estudiantes inscritos</span>
         </div>
         <div>
-          ${c.is_enrolled 
-            ? `<button class="btn btn-secondary btn-block" disabled><i class="fa-solid fa-check"></i> Ya estás matriculado</button>` 
-            : `<button class="btn btn-primary btn-block" onclick="enrollStudentInCourse(${c.id})"><i class="fa-solid fa-plus"></i> Matricularme en este Curso</button>`
-          }
+          ${c.is_enrolled
+        ? `<button class="btn btn-secondary btn-block" disabled><i class="fa-solid fa-check"></i> Ya estás matriculado</button>`
+        : `<button class="btn btn-primary btn-block" onclick="enrollStudentInCourse(${c.id})"><i class="fa-solid fa-plus"></i> Matricularme en este Curso</button>`
+      }
         </div>
       </div>
     `).join('');
@@ -1818,7 +1784,7 @@ window.loadAvailableCourses = async function() {
   }
 };
 
-window.enrollStudentInCourse = async function(groupId) {
+window.enrollStudentInCourse = async function (groupId) {
   try {
     await apiFetch('/api/academic/enrollments', {
       method: 'POST',
@@ -1911,7 +1877,7 @@ function scanVideoFrame() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    
+
     if (window.jsQR) {
       const code = jsQR(imageData.data, imageData.width, imageData.height, {
         inversionAttempts: 'dontInvert'
@@ -2081,7 +2047,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnTabLogin) btnTabLogin.addEventListener('click', switchToLoginTab);
   if (btnTabRegister) btnTabRegister.addEventListener('click', switchToRegisterTab);
-  
+
   const btnSwitchToReg = document.getElementById('btnSwitchToRegister');
   const btnSwitchToLog = document.getElementById('btnSwitchToLogin');
   if (btnSwitchToReg) btnSwitchToReg.addEventListener('click', switchToRegisterTab);
@@ -2358,40 +2324,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Perfil actualizado con éxito.', 'success');
       } catch (err) {
         showToast(`Error: ${err.message}`, 'error');
-      }
-    });
-  }
-
-  // Mobile Navigation Hamburger Toggle Listener
-  const btnMobileToggle = document.getElementById('btnMobileNavToggle');
-  const mainNavLinks = document.getElementById('mainNavLinks');
-  if (btnMobileToggle && mainNavLinks) {
-    btnMobileToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isOpen = mainNavLinks.classList.toggle('mobile-open');
-      btnMobileToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      const iconHam = btnMobileToggle.querySelector('.icon-hamburger');
-      const iconClose = btnMobileToggle.querySelector('.icon-close');
-      if (iconHam && iconClose) {
-        if (isOpen) {
-          iconHam.classList.add('hidden');
-          iconClose.classList.remove('hidden');
-        } else {
-          iconHam.classList.remove('hidden');
-          iconClose.classList.add('hidden');
-        }
-      }
-    });
-
-    // Close when tapping anywhere outside navbar
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.navbar') && mainNavLinks.classList.contains('mobile-open')) {
-        mainNavLinks.classList.remove('mobile-open');
-        btnMobileToggle.setAttribute('aria-expanded', 'false');
-        const iconHam = btnMobileToggle.querySelector('.icon-hamburger');
-        const iconClose = btnMobileToggle.querySelector('.icon-close');
-        if (iconHam) iconHam.classList.remove('hidden');
-        if (iconClose) iconClose.classList.add('hidden');
       }
     });
   }

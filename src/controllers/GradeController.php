@@ -1,652 +1,283 @@
 <?php
 /**
- * Evaluations, Grades & Gradebook Controller
- * Manages evaluation criteria, grades, weighted averages, batch submissions, and immutable audit trails
+ * NexusAcademic - Enterprise Clean Architecture
+ * Evaluations & Gradebook Controller (Thin HTTP Adapter)
  */
 
-require_once __DIR__ . '/../../config/database.php';
+namespace NexusAcademic\Controllers;
+
+use NexusAcademic\Core\Request;
+use NexusAcademic\Core\Response;
+use NexusAcademic\Models\GradeModel;
+use NexusAcademic\Models\AcademicModel;
+use NexusAcademic\Models\AuditModel;
+use GradeService;
+use Exception;
+
+require_once __DIR__ . '/../Core/Request.php';
+require_once __DIR__ . '/../Core/Response.php';
+require_once __DIR__ . '/../Models/GradeModel.php';
+require_once __DIR__ . '/../Models/AcademicModel.php';
+require_once __DIR__ . '/../Models/AuditModel.php';
 require_once __DIR__ . '/../Services/GradeService.php';
 
 class GradeController {
 
-    /**
-     * POST /api/evaluations (TEACHER & ADMIN)
-     */
-    public static function createEvaluation(array $user, array $body): void {
-        $groupId     = (int)($body['group_id'] ?? 0);
-        $name        = trim($body['name'] ?? '');
-        $description = trim($body['description'] ?? '');
-        $type        = strtoupper(trim($body['type'] ?? ''));
-        $weight      = isset($body['weight']) ? (float)$body['weight'] : null;
-        $maxScore    = isset($body['max_score']) ? (float)$body['max_score'] : 5.0;
-        $dueDate     = !empty($body['due_date']) ? trim($body['due_date']) : null;
+    public static function createEvaluation($req, ?array $body = null): void {
+        try {
+            $user = ($req instanceof Request) ? $req->getUser() : (array)$req;
+            $data = ($req instanceof Request) ? $req->getBody() : (array)$body;
+            $ip   = ($req instanceof Request) ? $req->getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
 
-        if (!$groupId || empty($name) || empty($type) || $weight === null) {
-            http_response_code(400);
-            echo json_encode(['error' => 'MISSING_FIELDS', 'message' => 'group_id, name, type y weight son requeridos.'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
+            $groupId = (int)($data['group_id'] ?? 0);
+            $name    = trim($data['name'] ?? '');
+            $type    = strtoupper(trim($data['type'] ?? ''));
+            $weight  = isset($data['weight']) ? (float)$data['weight'] : null;
 
-        $pdo = Database::getConnection();
-
-        $gStmt = $pdo->prepare('SELECT id, teacher_id FROM course_groups WHERE id = ?');
-        $gStmt->execute([$groupId]);
-        $group = $gStmt->fetch();
-
-        if (!$group) {
-            http_response_code(404);
-            echo json_encode(['error' => 'GROUP_NOT_FOUND'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        if ($user['role'] === 'TEACHER' && (int)$group['teacher_id'] !== (int)$user['teacherId']) {
-            http_response_code(403);
-            echo json_encode(['error' => 'NOT_COURSE_TEACHER', 'message' => 'No es el docente de este grupo.'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        if ($weight <= 0 || $weight > 100) {
-            http_response_code(400);
-            echo json_encode(['error' => 'INVALID_WEIGHT', 'message' => 'La ponderación debe ser un porcentaje positivo mayor a 0 y menor o igual a 100.'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        // Validate cumulative weight
-        $eStmt = $pdo->prepare('SELECT id, weight FROM evaluations WHERE group_id = ? AND status = "ACTIVE"');
-        $eStmt->execute([$groupId]);
-        $existing = $eStmt->fetchAll();
-
-        $weightVal = GradeService::validateEvaluationWeights($existing, $weight);
-        if (!$weightVal['valid']) {
-            http_response_code(400);
-            echo json_encode([
-                'error'   => 'INVALID_WEIGHT_SUM',
-                'message' => "La suma de ponderaciones ({$weightVal['projectedTotal']}%) superaría el 100%. Máximo disponible: {$weightVal['maxAllowed']}%."
-            ], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        $ins = $pdo->prepare('
-            INSERT INTO evaluations (group_id, name, description, type, weight, max_score, due_date, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, "ACTIVE")
-        ');
-        $ins->execute([$groupId, $name, $description ?: null, $type, $weight, $maxScore, $dueDate]);
-        $evalId = (int)$pdo->lastInsertId();
-
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-        $aud = $pdo->prepare('
-            INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details_json, ip_address)
-            VALUES (?, "EVALUATION_CREATED", "EVALUATION", ?, ?, ?)
-        ');
-        $aud->execute([$user['id'], (string)$evalId, json_encode(['group_id' => $groupId, 'name' => $name, 'weight' => $weight]), $ip]);
-
-        http_response_code(201);
-        echo json_encode(['success' => true, 'evaluationId' => $evalId], JSON_UNESCAPED_UNICODE);
-    }
-
-    /**
-     * PUT /api/evaluations/:id (TEACHER & ADMIN)
-     */
-    public static function updateEvaluation(array $user, $evalId, array $body): void {
-        $pdo = Database::getConnection();
-
-        $stmt = $pdo->prepare('
-            SELECT ev.*, cg.teacher_id 
-            FROM evaluations ev
-            JOIN course_groups cg ON ev.group_id = cg.id
-            WHERE ev.id = ?
-        ');
-        $stmt->execute([(int)$evalId]);
-        $evalObj = $stmt->fetch();
-
-        if (!$evalObj) {
-            http_response_code(404);
-            echo json_encode(['error' => 'EVALUATION_NOT_FOUND'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        if ($user['role'] === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)$user['teacherId']) {
-            http_response_code(403);
-            echo json_encode(['error' => 'NOT_COURSE_TEACHER'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        if (isset($body['weight'])) {
-            $numWeight = (float)$body['weight'];
-            if ($numWeight <= 0 || $numWeight > 100) {
-                http_response_code(400);
-                echo json_encode(['error' => 'INVALID_WEIGHT'], JSON_UNESCAPED_UNICODE);
-                return;
+            if (!$groupId || empty($name) || empty($type) || $weight === null) {
+                throw new Exception('group_id, name, type y weight son requeridos.', 400);
             }
-            $eStmt = $pdo->prepare('SELECT id, weight FROM evaluations WHERE group_id = ? AND status = "ACTIVE"');
-            $eStmt->execute([(int)$evalObj['group_id']]);
-            $existing = $eStmt->fetchAll();
 
-            $weightVal = GradeService::validateEvaluationWeights($existing, $numWeight, $evalId);
+            $group = AcademicModel::getGroupById($groupId);
+            if (!$group) {
+                throw new Exception('Grupo no encontrado.', 404);
+            }
+
+            if ($user['role'] === 'TEACHER' && (int)$group['teacher_id'] !== (int)$user['teacherId']) {
+                throw new Exception('No es el docente de este grupo.', 403);
+            }
+
+            if ($weight <= 0 || $weight > 100) {
+                throw new Exception('La ponderación debe ser un porcentaje positivo entre 1% y 100%.', 400);
+            }
+
+            $existing = GradeModel::getEvaluationsByGroup($groupId);
+            $weightVal = GradeService::validateEvaluationWeights($existing, $weight);
             if (!$weightVal['valid']) {
-                http_response_code(400);
-                echo json_encode([
-                    'error'   => 'INVALID_WEIGHT_SUM',
-                    'message' => "Ponderación excede el 100%. Máximo permitido: {$weightVal['maxAllowed']}%."
-                ], JSON_UNESCAPED_UNICODE);
-                return;
+                throw new Exception("La suma de ponderaciones ({$weightVal['projectedTotal']}%) superaría el 100%. Máximo disponible: {$weightVal['maxAllowed']}%.", 400);
             }
+
+            $evalId = GradeModel::createEvaluation($data);
+            AuditModel::log((int)$user['id'], 'EVALUATION_CREATED', 'EVALUATION', (string)$evalId, [
+                'group_id' => $groupId,
+                'name'     => $name,
+                'weight'   => $weight
+            ], $ip);
+
+            Response::created(['evaluationId' => $evalId]);
+        } catch (Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
+            Response::error($e->getMessage(), 'CREATE_EVALUATION_ERROR', $code);
         }
-
-        $upd = $pdo->prepare('
-            UPDATE evaluations
-            SET name = COALESCE(?, name),
-                description = COALESCE(?, description),
-                type = COALESCE(?, type),
-                weight = COALESCE(?, weight),
-                max_score = COALESCE(?, max_score),
-                due_date = COALESCE(?, due_date),
-                status = COALESCE(?, status)
-            WHERE id = ?
-        ');
-        $upd->execute([
-            !empty($body['name']) ? trim($body['name']) : null,
-            isset($body['description']) ? trim($body['description']) : null,
-            !empty($body['type']) ? strtoupper(trim($body['type'])) : null,
-            isset($body['weight']) ? (float)$body['weight'] : null,
-            isset($body['max_score']) ? (float)$body['max_score'] : null,
-            isset($body['due_date']) ? trim($body['due_date']) : null,
-            !empty($body['status']) ? strtoupper(trim($body['status'])) : null,
-            (int)$evalId
-        ]);
-
-        echo json_encode(['success' => true, 'message' => 'Evaluación actualizada con éxito.'], JSON_UNESCAPED_UNICODE);
     }
 
-    /**
-     * DELETE /api/evaluations/:id (TEACHER & ADMIN)
-     */
-    public static function deleteEvaluation(array $user, $evalId): void {
-        $pdo = Database::getConnection();
-
-        $stmt = $pdo->prepare('
-            SELECT ev.*, cg.teacher_id 
-            FROM evaluations ev
-            JOIN course_groups cg ON ev.group_id = cg.id
-            WHERE ev.id = ?
-        ');
-        $stmt->execute([(int)$evalId]);
-        $evalObj = $stmt->fetch();
-
-        if (!$evalObj) {
-            http_response_code(404);
-            echo json_encode(['error' => 'EVALUATION_NOT_FOUND'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        if ($user['role'] === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)$user['teacherId']) {
-            http_response_code(403);
-            echo json_encode(['error' => 'NOT_COURSE_TEACHER'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        $del = $pdo->prepare('DELETE FROM evaluations WHERE id = ?');
-        $del->execute([(int)$evalId]);
-
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-        $aud = $pdo->prepare('
-            INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details_json, ip_address)
-            VALUES (?, "EVALUATION_DELETED", "EVALUATION", ?, "{}", ?)
-        ');
-        $aud->execute([$user['id'], (string)$evalId, $ip]);
-
-        echo json_encode(['success' => true, 'message' => 'Evaluación eliminada correctamente.'], JSON_UNESCAPED_UNICODE);
-    }
-
-    /**
-     * POST /api/grades (TEACHER & ADMIN)
-     */
-    public static function saveGrade(array $user, array $body): void {
-        $evalId       = (int)($body['evaluation_id'] ?? 0);
-        $studentId    = (int)($body['student_id'] ?? 0);
-        $score        = $body['score'] ?? null;
-        $feedback     = trim($body['feedback'] ?? '');
-        $changeReason = trim($body['change_reason'] ?? '');
-
-        if (!$evalId || !$studentId || $score === null) {
-            http_response_code(400);
-            echo json_encode(['error' => 'MISSING_FIELDS', 'message' => 'evaluation_id, student_id y score son obligatorios.'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        $pdo = Database::getConnection();
-
-        // Check evaluation & group ownership
-        $stmt = $pdo->prepare('
-            SELECT ev.*, cg.teacher_id, cg.id AS group_id 
-            FROM evaluations ev
-            JOIN course_groups cg ON ev.group_id = cg.id
-            WHERE ev.id = ?
-        ');
-        $stmt->execute([$evalId]);
-        $evalObj = $stmt->fetch();
-
-        if (!$evalObj) {
-            http_response_code(404);
-            echo json_encode(['error' => 'EVALUATION_NOT_FOUND'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        if ($user['role'] === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)$user['teacherId']) {
-            http_response_code(403);
-            echo json_encode(['error' => 'NOT_COURSE_TEACHER', 'message' => 'No es el docente de este grupo.'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        // Validate student enrollment
-        $eChk = $pdo->prepare('SELECT id FROM enrollments WHERE group_id = ? AND student_id = ? AND status = "ACTIVE"');
-        $eChk->execute([(int)$evalObj['group_id'], $studentId]);
-        if (!$eChk->fetch()) {
-            http_response_code(400);
-            echo json_encode(['error' => 'STUDENT_NOT_ENROLLED', 'message' => 'El estudiante no está matriculado en este grupo.'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        // Validate score bounds
-        $inst = $pdo->query('SELECT min_grade, max_grade FROM institutions LIMIT 1')->fetch();
-        $minG = $inst ? (float)$inst['min_grade'] : 0.0;
-        $maxG = $inst ? (float)$inst['max_grade'] : 5.0;
-
-        $scoreVal = GradeService::validateScoreBounds($score, $minG, $maxG);
-        if (!$scoreVal['valid']) {
-            http_response_code(400);
-            echo json_encode(['error' => 'SCORE_OUT_OF_BOUNDS', 'message' => $scoreVal['reason']], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        $finalScore = $scoreVal['score'];
-
+    public static function updateEvaluation($req, $evalId = null, ?array $body = null): void {
         try {
-            $result = Database::transaction(function (PDO $db) use ($evalId, $studentId, $finalScore, $feedback, $changeReason, $user) {
-                $gStmt = $db->prepare('SELECT id, score, feedback FROM grades WHERE evaluation_id = ? AND student_id = ?');
-                $gStmt->execute([$evalId, $studentId]);
-                $existing = $gStmt->fetch();
+            $user = ($req instanceof Request) ? $req->getUser() : (array)$req;
+            $id   = ($req instanceof Request) ? (int)$req->getParam('id') : (int)$evalId;
+            $data = ($req instanceof Request) ? $req->getBody() : (array)$body;
+            $ip   = ($req instanceof Request) ? $req->getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
 
-                $oldScore = null;
-                $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            $evalObj = GradeModel::getEvaluationById($id);
+            if (!$evalObj) {
+                throw new Exception('Evaluación no encontrada.', 404);
+            }
 
-                if ($existing) {
-                    $gradeId  = (int)$existing['id'];
-                    $oldScore = (float)$existing['score'];
+            if ($user['role'] === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)$user['teacherId']) {
+                throw new Exception('No tiene permisos para modificar esta evaluación.', 403);
+            }
 
-                    if ($oldScore != $finalScore && empty($changeReason)) {
-                        throw new RuntimeException('REASON_REQUIRED: Debe proporcionar el motivo de la modificación de la nota.');
-                    }
-
-                    $upd = $db->prepare('
-                        UPDATE grades 
-                        SET score = ?, feedback = ?, graded_by_user_id = ?, updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?
-                    ');
-                    $upd->execute([$finalScore, $feedback ?: null, $user['id'], $gradeId]);
-                } else {
-                    $ins = $db->prepare('
-                        INSERT INTO grades (evaluation_id, student_id, score, feedback, graded_by_user_id)
-                        VALUES (?, ?, ?, ?, ?)
-                    ');
-                    $ins->execute([$evalId, $studentId, $finalScore, $feedback ?: null, $user['id']]);
-                    $gradeId = (int)$db->lastInsertId();
+            if (isset($data['weight'])) {
+                $newWeight = (float)$data['weight'];
+                if ($newWeight <= 0 || $newWeight > 100) {
+                    throw new Exception('La ponderación debe estar entre 1% y 100%.', 400);
                 }
+                $existing = GradeModel::getEvaluationsByGroup((int)$evalObj['group_id']);
+                $filtered = array_filter($existing, fn($e) => (int)$e['id'] !== $id);
+                $weightVal = GradeService::validateEvaluationWeights($filtered, $newWeight);
+                if (!$weightVal['valid']) {
+                    throw new Exception("La suma de ponderaciones ({$weightVal['projectedTotal']}%) superaría el 100%.", 400);
+                }
+            }
 
-                // Insert into immutable grade_history
-                $gh = $db->prepare('
-                    INSERT INTO grade_history (
-                        grade_id, evaluation_id, student_id, old_score, new_score, change_reason, changed_by_user_id, ip_address
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ');
-                $gh->execute([
-                    $gradeId,
-                    $evalId,
-                    $studentId,
-                    $oldScore,
-                    $finalScore,
-                    !empty($changeReason) ? $changeReason : ($oldScore === null ? 'Calificación inicial' : 'Ajuste de nota'),
-                    $user['id'],
-                    $ip
-                ]);
+            GradeModel::updateEvaluation($id, $data);
+            AuditModel::log((int)$user['id'], 'EVALUATION_UPDATED', 'EVALUATION', (string)$id, $data, $ip);
 
-                return ['gradeId' => $gradeId, 'oldScore' => $oldScore, 'newScore' => $finalScore];
-            });
-
-            echo json_encode([
-                'success' => true,
-                'message' => 'Calificación guardada y auditada exitosamente.',
-                'grade'   => $result
-            ], JSON_UNESCAPED_UNICODE);
-        } catch (RuntimeException $e) {
-            http_response_code(400);
-            echo json_encode(['error' => 'REASON_REQUIRED', 'message' => str_replace('REASON_REQUIRED: ', '', $e->getMessage())], JSON_UNESCAPED_UNICODE);
-        } catch (Throwable $e) {
-            http_response_code(500);
-            echo json_encode(['error' => 'SERVER_ERROR', 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+            Response::success(null, 'Evaluación académica actualizada.');
+        } catch (Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
+            Response::error($e->getMessage(), 'UPDATE_EVALUATION_ERROR', $code);
         }
     }
 
-    /**
-     * POST /api/grades/batch (TEACHER & ADMIN)
-     */
-    public static function saveBatchGrades(array $user, array $body): void {
-        $evalId        = (int)($body['evaluation_id'] ?? 0);
-        $gradesList    = $body['gradesList'] ?? [];
-        $defaultReason = trim($body['default_reason'] ?? 'Calificación masiva en lote');
-
-        if (!$evalId || !is_array($gradesList)) {
-            http_response_code(400);
-            echo json_encode(['error' => 'INVALID_PAYLOAD', 'message' => 'evaluation_id y lista de notas requeridas.'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        $pdo = Database::getConnection();
-
-        $stmt = $pdo->prepare('
-            SELECT ev.*, cg.teacher_id, cg.id AS group_id 
-            FROM evaluations ev
-            JOIN course_groups cg ON ev.group_id = cg.id
-            WHERE ev.id = ?
-        ');
-        $stmt->execute([$evalId]);
-        $evalObj = $stmt->fetch();
-
-        if (!$evalObj) {
-            http_response_code(404);
-            echo json_encode(['error' => 'EVALUATION_NOT_FOUND'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        if ($user['role'] === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)$user['teacherId']) {
-            http_response_code(403);
-            echo json_encode(['error' => 'NOT_COURSE_TEACHER'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        $inst = $pdo->query('SELECT min_grade, max_grade FROM institutions LIMIT 1')->fetch();
-        $minG = $inst ? (float)$inst['min_grade'] : 0.0;
-        $maxG = $inst ? (float)$inst['max_grade'] : 5.0;
-
+    public static function deleteEvaluation($req, $evalId = null): void {
         try {
-            Database::transaction(function (PDO $db) use ($evalId, $gradesList, $defaultReason, $user, $minG, $maxG) {
-                $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            $user = ($req instanceof Request) ? $req->getUser() : (array)$req;
+            $id   = ($req instanceof Request) ? (int)$req->getParam('id') : (int)$evalId;
+            $ip   = ($req instanceof Request) ? $req->getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
 
-                foreach ($gradesList as $item) {
-                    $studentId    = (int)($item['student_id'] ?? 0);
-                    $score        = $item['score'] ?? null;
-                    $feedback     = trim($item['feedback'] ?? '');
-                    $changeReason = trim($item['change_reason'] ?? '');
+            $evalObj = GradeModel::getEvaluationById($id);
+            if (!$evalObj) {
+                throw new Exception('Evaluación no encontrada.', 404);
+            }
 
-                    if ($score === null || $score === '') {
-                        continue;
-                    }
+            if ($user['role'] === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)$user['teacherId']) {
+                throw new Exception('No tiene permisos para eliminar esta evaluación.', 403);
+            }
 
-                    $scoreVal = GradeService::validateScoreBounds($score, $minG, $maxG);
-                    if (!$scoreVal['valid']) {
-                        throw new RuntimeException("Estudiante ID {$studentId}: " . $scoreVal['reason']);
-                    }
+            GradeModel::deleteEvaluation($id);
+            AuditModel::log((int)$user['id'], 'EVALUATION_DELETED', 'EVALUATION', (string)$id, null, $ip);
 
-                    $finalScore = $scoreVal['score'];
+            Response::success(null, 'Evaluación y calificaciones eliminadas.');
+        } catch (Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
+            Response::error($e->getMessage(), 'DELETE_EVALUATION_ERROR', $code);
+        }
+    }
 
-                    $gStmt = $db->prepare('SELECT id, score FROM grades WHERE evaluation_id = ? AND student_id = ?');
-                    $gStmt->execute([$evalId, $studentId]);
-                    $existing = $gStmt->fetch();
+    public static function saveGrade($req, ?array $body = null): void {
+        try {
+            $user = ($req instanceof Request) ? $req->getUser() : (array)$req;
+            $data = ($req instanceof Request) ? $req->getBody() : (array)$body;
+            $ip   = ($req instanceof Request) ? $req->getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
 
-                    if ($existing) {
-                        $gradeId  = (int)$existing['id'];
-                        $oldScore = (float)$existing['score'];
+            $evalId    = (int)($data['evaluation_id'] ?? 0);
+            $studentId = (int)($data['student_id'] ?? 0);
+            $score     = isset($data['score']) ? (float)$data['score'] : null;
 
-                        if ($oldScore != $finalScore) {
-                            $upd = $db->prepare('
-                                UPDATE grades 
-                                SET score = ?, feedback = ?, graded_by_user_id = ?, updated_at = CURRENT_TIMESTAMP
-                                WHERE id = ?
-                            ');
-                            $upd->execute([$finalScore, $feedback ?: null, $user['id'], $gradeId]);
+            if (!$evalId || !$studentId || $score === null) {
+                throw new Exception('evaluation_id, student_id y score son requeridos.', 400);
+            }
 
-                            $gh = $db->prepare('
-                                INSERT INTO grade_history (
-                                    grade_id, evaluation_id, student_id, old_score, new_score, change_reason, changed_by_user_id, ip_address
-                                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                            ');
-                            $gh->execute([
-                                $gradeId,
-                                $evalId,
-                                $studentId,
-                                $oldScore,
-                                $finalScore,
-                                !empty($changeReason) ? $changeReason : $defaultReason,
-                                $user['id'],
-                                $ip
-                            ]);
-                        }
-                    } else {
-                        $ins = $db->prepare('
-                            INSERT INTO grades (evaluation_id, student_id, score, feedback, graded_by_user_id)
-                            VALUES (?, ?, ?, ?, ?)
-                        ');
-                        $ins->execute([$evalId, $studentId, $finalScore, $feedback ?: null, $user['id']]);
-                        $gradeId = (int)$db->lastInsertId();
+            $evalObj = GradeModel::getEvaluationById($evalId);
+            if (!$evalObj) {
+                throw new Exception('Evaluación no encontrada.', 404);
+            }
 
-                        $gh = $db->prepare('
-                            INSERT INTO grade_history (
-                                grade_id, evaluation_id, student_id, old_score, new_score, change_reason, changed_by_user_id, ip_address
-                            ) VALUES (?, ?, ?, NULL, ?, ?, ?, ?)
-                        ');
-                        $gh->execute([
-                            $gradeId,
-                            $evalId,
-                            $studentId,
-                            $finalScore,
-                            !empty($changeReason) ? $changeReason : $defaultReason,
-                            $user['id'],
-                            $ip
-                        ]);
-                    }
+            if ($user['role'] === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)$user['teacherId']) {
+                throw new Exception('No es el docente a cargo de esta calificación.', 403);
+            }
+
+            $maxScore = (float)($evalObj['max_score'] ?? 5.0);
+            if (!GradeService::isValidScore($score, 0.0, $maxScore)) {
+                throw new Exception("La calificación debe estar comprendida entre 0.0 y {$maxScore}.", 400);
+            }
+
+            $data['changed_by_user_id'] = (int)$user['id'];
+            $data['ip_address'] = $ip;
+
+            $gradeId = GradeModel::saveGrade($data);
+            AuditModel::log((int)$user['id'], 'GRADE_SAVED', 'GRADE', (string)$gradeId, [
+                'student_id'    => $studentId,
+                'evaluation_id' => $evalId,
+                'score'         => $score
+            ], $ip);
+
+            Response::json(['success' => true, 'gradeId' => $gradeId, 'score' => $score]);
+        } catch (Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
+            Response::error($e->getMessage(), 'SAVE_GRADE_ERROR', $code);
+        }
+    }
+
+    public static function saveBatchGrades($req, ?array $body = null): void {
+        try {
+            $user = ($req instanceof Request) ? $req->getUser() : (array)$req;
+            $data = ($req instanceof Request) ? $req->getBody() : (array)$body;
+            $ip   = ($req instanceof Request) ? $req->getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
+
+            $evalId = (int)($data['evaluation_id'] ?? 0);
+            $grades = $data['grades'] ?? [];
+
+            if (!$evalId || !is_array($grades)) {
+                throw new Exception('evaluation_id y arreglo de grades son requeridos.', 400);
+            }
+
+            $evalObj = GradeModel::getEvaluationById($evalId);
+            if (!$evalObj) {
+                throw new Exception('Evaluación no encontrada.', 404);
+            }
+
+            if ($user['role'] === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)$user['teacherId']) {
+                throw new Exception('No tiene permisos sobre esta evaluación.', 403);
+            }
+
+            $maxScore = (float)($evalObj['max_score'] ?? 5.0);
+            $processedCount = 0;
+
+            foreach ($grades as $g) {
+                $studentId = (int)($g['student_id'] ?? 0);
+                $score = isset($g['score']) ? (float)$g['score'] : null;
+                if ($studentId && $score !== null && GradeService::isValidScore($score, 0.0, $maxScore)) {
+                    GradeModel::saveGrade([
+                        'evaluation_id'      => $evalId,
+                        'student_id'         => $studentId,
+                        'score'              => $score,
+                        'feedback'           => $g['feedback'] ?? null,
+                        'change_reason'      => $g['change_reason'] ?? 'Calificación masiva de grupo',
+                        'changed_by_user_id' => (int)$user['id'],
+                        'ip_address'         => $ip
+                    ]);
+                    $processedCount++;
                 }
-            });
+            }
 
-            echo json_encode(['success' => true, 'message' => 'Calificaciones registradas correctamente.'], JSON_UNESCAPED_UNICODE);
-        } catch (Throwable $e) {
-            http_response_code(400);
-            echo json_encode(['error' => 'BATCH_ERROR', 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+            Response::json(['success' => true, 'processedCount' => $processedCount]);
+        } catch (Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
+            Response::error($e->getMessage(), 'BATCH_GRADE_ERROR', $code);
         }
     }
 
-    /**
-     * GET /api/grades/group/:groupId/matrix (TEACHER & ADMIN)
-     */
-    public static function getGroupGradesMatrix(array $user, $groupId): void {
-        $pdo = Database::getConnection();
+    public static function getGroupGradesMatrix($req, $groupId = null): void {
+        try {
+            $user = ($req instanceof Request) ? $req->getUser() : (array)$req;
+            $id   = ($req instanceof Request) ? (int)$req->getParam('id') : (int)$groupId;
 
-        $stmt = $pdo->prepare('
-            SELECT cg.*, s.name AS subject_name, s.code AS subject_code 
-            FROM course_groups cg
-            JOIN subjects s ON cg.subject_id = s.id
-            WHERE cg.id = ?
-        ');
-        $stmt->execute([(int)$groupId]);
-        $group = $stmt->fetch();
+            $group = AcademicModel::getGroupById($id);
+            if (!$group) {
+                throw new Exception('Grupo no encontrado.', 404);
+            }
 
-        if (!$group) {
-            http_response_code(404);
-            echo json_encode(['error' => 'GROUP_NOT_FOUND'], JSON_UNESCAPED_UNICODE);
-            return;
+            if ($user['role'] === 'TEACHER' && (int)$group['teacher_id'] !== (int)$user['teacherId']) {
+                throw new Exception('No tiene permisos para ver las notas de este grupo.', 403);
+            }
+
+            $matrix = GradeModel::getGroupGradesMatrix($id);
+            Response::json($matrix);
+        } catch (Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
+            Response::error($e->getMessage(), 'GRADES_MATRIX_ERROR', $code);
         }
-
-        if ($user['role'] === 'TEACHER' && (int)$group['teacher_id'] !== (int)$user['teacherId']) {
-            http_response_code(403);
-            echo json_encode(['error' => 'NOT_COURSE_TEACHER'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        $evStmt = $pdo->prepare('SELECT * FROM evaluations WHERE group_id = ? ORDER BY due_date ASC, id ASC');
-        $evStmt->execute([(int)$groupId]);
-        $evaluations = $evStmt->fetchAll();
-
-        $stStmt = $pdo->prepare('
-            SELECT 
-                st.id AS student_id, st.student_code, st.career,
-                u.id AS user_id, u.first_name, u.last_name, u.email
-            FROM enrollments e
-            JOIN students st ON e.student_id = st.id
-            JOIN users u ON st.user_id = u.id
-            WHERE e.group_id = ? AND e.status = "ACTIVE"
-            ORDER BY u.last_name ASC, u.first_name ASC
-        ');
-        $stStmt->execute([(int)$groupId]);
-        $enrolledStudents = $stStmt->fetchAll();
-
-        $grStmt = $pdo->prepare('
-            SELECT g.*, ev.group_id
-            FROM grades g
-            JOIN evaluations ev ON g.evaluation_id = ev.id
-            WHERE ev.group_id = ?
-        ');
-        $grStmt->execute([(int)$groupId]);
-        $allGrades = $grStmt->fetchAll();
-
-        $inst = $pdo->query('SELECT min_passing_grade, max_grade FROM institutions LIMIT 1')->fetch();
-        $minPass = $inst ? (float)$inst['min_passing_grade'] : 3.0;
-        $maxG    = $inst ? (float)$inst['max_grade'] : 5.0;
-
-        $matrix = [];
-        foreach ($enrolledStudents as $student) {
-            $stId = (int)$student['student_id'];
-            $stGrades = array_values(array_filter($allGrades, fn($g) => (int)$g['student_id'] === $stId));
-            $stats = GradeService::calculateStudentAverage($evaluations, $stGrades, $minPass, $maxG);
-
-            $matrix[] = [
-                'student'              => $student,
-                'grades'               => $stats['details'],
-                'weightedAverage'      => $stats['weightedAverage'],
-                'accumulatedScore'     => $stats['accumulatedScore'],
-                'totalEvaluatedWeight' => $stats['totalEvaluatedWeight'],
-                'remainingWeight'      => $stats['remainingWeight'],
-                'projectedNeededGrade' => $stats['projectedNeededGrade'],
-                'isPassing'            => $stats['isPassing']
-            ];
-        }
-
-        echo json_encode([
-            'group'            => $group,
-            'evaluations'      => $evaluations,
-            'matrix'           => $matrix,
-            'totalStudents'    => count($enrolledStudents),
-            'totalEvaluations' => count($evaluations)
-        ], JSON_UNESCAPED_UNICODE);
     }
 
-    /**
-     * GET /api/grades/my-grades (STUDENT ONLY - Anti-IDOR Protected)
-     */
-    public static function getMyGrades(array $user): void {
-        $studentId = $user['studentId'];
-        if (!$studentId) {
-            http_response_code(403);
-            echo json_encode(['error' => 'STUDENT_ROLE_REQUIRED'], JSON_UNESCAPED_UNICODE);
-            return;
+    public static function getMyGrades($req = null): void {
+        try {
+            $user = ($req instanceof Request) ? $req->getUser() : (array)$req;
+            $studentId = (int)($user['studentId'] ?? 0);
+            if (!$studentId) {
+                throw new Exception('Perfil de estudiante no encontrado.', 403);
+            }
+
+            $grades = GradeModel::getMyGrades($studentId);
+            Response::json($grades);
+        } catch (Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
+            Response::error($e->getMessage(), 'MY_GRADES_ERROR', $code);
         }
-
-        $pdo = Database::getConnection();
-
-        $gStmt = $pdo->prepare('
-            SELECT 
-                cg.id AS group_id, cg.group_code, cg.schedule, cg.classroom,
-                s.id AS subject_id, s.name AS subject_name, s.code AS subject_code, s.credits,
-                ap.name AS period_name,
-                u.first_name AS teacher_first_name, u.last_name AS teacher_last_name
-            FROM enrollments e
-            JOIN course_groups cg ON e.group_id = cg.id
-            JOIN subjects s ON cg.subject_id = s.id
-            JOIN academic_periods ap ON cg.period_id = ap.id
-            JOIN teachers t ON cg.teacher_id = t.id
-            JOIN users u ON t.user_id = u.id
-            WHERE e.student_id = ? AND e.status = "ACTIVE"
-            ORDER BY s.name ASC
-        ');
-        $gStmt->execute([$studentId]);
-        $groups = $gStmt->fetchAll();
-
-        $inst = $pdo->query('SELECT min_passing_grade, max_grade FROM institutions LIMIT 1')->fetch();
-        $minPass = $inst ? (float)$inst['min_passing_grade'] : 3.0;
-        $maxG    = $inst ? (float)$inst['max_grade'] : 5.0;
-
-        $report = [];
-        foreach ($groups as $grp) {
-            $grpId = (int)$grp['group_id'];
-
-            $evStmt = $pdo->prepare('SELECT * FROM evaluations WHERE group_id = ? ORDER BY due_date ASC, id ASC');
-            $evStmt->execute([$grpId]);
-            $evaluations = $evStmt->fetchAll();
-
-            $grStmt = $pdo->prepare('
-                SELECT g.* 
-                FROM grades g
-                JOIN evaluations ev ON g.evaluation_id = ev.id
-                WHERE ev.group_id = ? AND g.student_id = ?
-            ');
-            $grStmt->execute([$grpId, $studentId]);
-            $grades = $grStmt->fetchAll();
-
-            $stats = GradeService::calculateStudentAverage($evaluations, $grades, $minPass, $maxG);
-
-            $report[] = [
-                'group' => $grp,
-                'stats' => $stats
-            ];
-        }
-
-        echo json_encode(['studentId' => $studentId, 'courses' => $report], JSON_UNESCAPED_UNICODE);
     }
 
-    /**
-     * GET /api/grades/:gradeId/history (TEACHER, ADMIN, STUDENT)
-     */
-    public static function getGradeAuditHistory(array $user, $gradeId): void {
-        $pdo = Database::getConnection();
-
-        $stmt = $pdo->prepare('
-            SELECT g.*, ev.name AS evaluation_name, ev.weight, ev.group_id, cg.teacher_id
-            FROM grades g
-            JOIN evaluations ev ON g.evaluation_id = ev.id
-            JOIN course_groups cg ON ev.group_id = cg.id
-            WHERE g.id = ?
-        ');
-        $stmt->execute([(int)$gradeId]);
-        $grade = $stmt->fetch();
-
-        if (!$grade) {
-            http_response_code(404);
-            echo json_encode(['error' => 'GRADE_NOT_FOUND'], JSON_UNESCAPED_UNICODE);
-            return;
+    public static function getGradeAuditHistory($req, $gradeId = null): void {
+        try {
+            $id = ($req instanceof Request) ? (int)$req->getParam('id') : (int)$gradeId;
+            $history = GradeModel::getGradeHistory($id);
+            Response::json($history);
+        } catch (Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
+            Response::error($e->getMessage(), 'GRADE_HISTORY_ERROR', $code);
         }
-
-        if ($user['role'] === 'STUDENT' && (int)$grade['student_id'] !== (int)$user['studentId']) {
-            http_response_code(403);
-            echo json_encode(['error' => 'ACCESS_DENIED', 'message' => 'No puede ver el historial de otro estudiante.'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        if ($user['role'] === 'TEACHER' && (int)$grade['teacher_id'] !== (int)$user['teacherId']) {
-            http_response_code(403);
-            echo json_encode(['error' => 'ACCESS_DENIED'], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-
-        $hStmt = $pdo->prepare('
-            SELECT 
-                gh.*,
-                u.first_name AS changed_by_first_name, u.last_name AS changed_by_last_name, u.role AS changed_by_role
-            FROM grade_history gh
-            JOIN users u ON gh.changed_by_user_id = u.id
-            WHERE gh.grade_id = ?
-            ORDER BY gh.created_at DESC, gh.id DESC
-        ');
-        $hStmt->execute([(int)$gradeId]);
-        $history = $hStmt->fetchAll();
-
-        echo json_encode(['grade' => $grade, 'history' => $history], JSON_UNESCAPED_UNICODE);
     }
 }
+
+// Global class alias for legacy procedural includes
+class_alias(GradeController::class, 'GradeController');

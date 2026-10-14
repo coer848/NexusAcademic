@@ -1,7 +1,15 @@
 <?php
 /**
+ * NexusAcademic - Enterprise Clean Architecture
  * Authentication Middleware (JWT Bearer Token Validator)
  */
+
+namespace NexusAcademic\Middleware;
+
+use Database;
+use CryptoService;
+use NexusAcademic\Core\Request;
+use NexusAcademic\Core\Response;
 
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../Services/CryptoService.php';
@@ -11,43 +19,40 @@ class AuthMiddleware {
     /**
      * Authenticates the incoming request via Bearer token
      *
+     * @param Request|null $request Optional request object to bind user context
      * @return array The authenticated user record with role extensions
      */
-    public static function authenticate(): array {
+    public static function authenticate(?Request $request = null): array {
         $authHeader = null;
 
-        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
-            $authHeader = trim($_SERVER['HTTP_AUTHORIZATION']);
-        } elseif (isset($_SERVER['Authorization'])) {
-            $authHeader = trim($_SERVER['Authorization']);
-        } elseif (function_exists('apache_request_headers')) {
-            $headers = apache_request_headers();
-            if (isset($headers['Authorization'])) {
-                $authHeader = trim($headers['Authorization']);
-            } elseif (isset($headers['authorization'])) {
-                $authHeader = trim($headers['authorization']);
+        if ($request !== null) {
+            $authHeader = $request->getHeader('Authorization');
+        }
+
+        if (!$authHeader) {
+            if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+                $authHeader = trim($_SERVER['HTTP_AUTHORIZATION']);
+            } elseif (isset($_SERVER['Authorization'])) {
+                $authHeader = trim($_SERVER['Authorization']);
+            } elseif (function_exists('apache_request_headers')) {
+                $headers = apache_request_headers();
+                if (isset($headers['Authorization'])) {
+                    $authHeader = trim($headers['Authorization']);
+                } elseif (isset($headers['authorization'])) {
+                    $authHeader = trim($headers['authorization']);
+                }
             }
         }
 
         if (!$authHeader || !preg_match('/^Bearer\s+(.*)$/i', $authHeader, $matches)) {
-            http_response_code(401);
-            echo json_encode([
-                'error'   => 'AUTHENTICATION_REQUIRED',
-                'message' => 'Token de autorización ausente o formato inválido (debe ser Bearer <token>).'
-            ], JSON_UNESCAPED_UNICODE);
-            exit;
+            Response::unauthorized('Token de autorización ausente o formato inválido (debe ser Bearer <token>).');
         }
 
         $token = trim($matches[1]);
         $payload = CryptoService::verifyToken($token);
 
         if (!$payload || empty($payload['id'])) {
-            http_response_code(401);
-            echo json_encode([
-                'error'   => 'INVALID_OR_EXPIRED_TOKEN',
-                'message' => 'El token de sesión es inválido o ha expirado.'
-            ], JSON_UNESCAPED_UNICODE);
-            exit;
+            Response::unauthorized('El token de sesión es inválido o ha expirado.');
         }
 
         // Verify active user in MySQL database
@@ -57,12 +62,7 @@ class AuthMiddleware {
         $user = $stmt->fetch();
 
         if (!$user || $user['status'] !== 'ACTIVE') {
-            http_response_code(401);
-            echo json_encode([
-                'error'   => 'USER_INACTIVE_OR_DELETED',
-                'message' => 'El usuario no existe o se encuentra inactivo.'
-            ], JSON_UNESCAPED_UNICODE);
-            exit;
+            Response::unauthorized('El usuario no existe o se encuentra inactivo.');
         }
 
         // Load role-specific profile IDs
@@ -85,7 +85,7 @@ class AuthMiddleware {
             }
         }
 
-        return [
+        $userData = [
             'id'        => (int)$user['id'],
             'email'     => $user['email'],
             'firstName' => $user['first_name'],
@@ -94,5 +94,20 @@ class AuthMiddleware {
             'teacherId' => $teacherId,
             'studentId' => $studentId
         ];
+
+        if ($request !== null) {
+            $request->setUser($userData);
+        }
+
+        return $userData;
+    }
+
+    /**
+     * Middleware handler for Router pipeline
+     */
+    public static function handle(): callable {
+        return function (Request $request) {
+            self::authenticate($request);
+        };
     }
 }
