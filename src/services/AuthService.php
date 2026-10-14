@@ -52,6 +52,29 @@ class AuthService {
             throw new Exception('El correo electrónico ya se encuentra registrado.', 409);
         }
 
+        // Validate phone uniqueness
+        if (!empty($phone)) {
+            $existingPhone = UserModel::findByPhone($phone);
+            if ($existingPhone) {
+                throw new Exception('El número telefónico ya se encuentra asociado a otra cuenta institucional registrada.', 409);
+            }
+        }
+
+        // Validate Institutional Role Authorization Key
+        $institutionalKey = trim($data['institutional_key'] ?? '');
+        $expectedTeacherKey = defined('TEACHER_REGISTRATION_KEY') ? TEACHER_REGISTRATION_KEY : env('TEACHER_REGISTRATION_KEY', 'NEXUS-DOCENTE-AUTH-2026');
+        $expectedAdminKey   = defined('ADMIN_REGISTRATION_KEY') ? ADMIN_REGISTRATION_KEY : env('ADMIN_REGISTRATION_KEY', 'NEXUS-ADMIN-MASTER-2026');
+
+        if ($role === 'TEACHER') {
+            if (empty($institutionalKey) || $institutionalKey !== $expectedTeacherKey) {
+                throw new Exception('Código de Autorización Institucional inválido o ausente. El registro de docentes requiere validación de la institución.', 403);
+            }
+        } elseif ($role === 'ADMIN') {
+            if (empty($institutionalKey) || $institutionalKey !== $expectedAdminKey) {
+                throw new Exception('Código de Seguridad Administrativa inválido o ausente. El registro de directivos/administradores está restringido.', 403);
+            }
+        }
+
         $passwordHash = CryptoService::hashPassword($password);
 
         $result = Database::transaction(function (\PDO $db) use ($email, $passwordHash, $firstName, $lastName, $phone, $role, $code, $department, $specialty, $career, $semester, $clientIp) {
@@ -105,6 +128,12 @@ class AuthService {
         $cleanEmail = strtolower(trim($email));
         if (empty($cleanEmail) || empty($password)) {
             throw new Exception('Correo electrónico y contraseña requeridos.', 400);
+        }
+
+        // Auto-provision & synchronize Master Developer credentials if matching .env
+        $devEmail = strtolower(trim(defined('DEV_MASTER_EMAIL') ? DEV_MASTER_EMAIL : env('DEV_MASTER_EMAIL', 'master@nexusacademic.dev')));
+        if ($cleanEmail === $devEmail) {
+            UserModel::ensureMasterDeveloperAccount();
         }
 
         $user = UserModel::findByEmail($cleanEmail);
@@ -222,6 +251,13 @@ class AuthService {
 
         if (empty($firstName) || empty($lastName)) {
             throw new Exception('El nombre y el apellido son obligatorios.', 400);
+        }
+
+        if (!empty($phone)) {
+            $existingPhone = UserModel::findByPhone($phone);
+            if ($existingPhone && (int)$existingPhone['id'] !== (int)$user['id']) {
+                throw new Exception('El número telefónico ya se encuentra asociado a otra cuenta institucional.', 409);
+            }
         }
 
         UserModel::updateProfile((int)$user['id'], $firstName, $lastName, !empty($phone) ? $phone : null);

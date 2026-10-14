@@ -24,4 +24,7 @@ return function (Router $router): void {
 
     // 5. System Audit Trails & Telemetry Routes
     require_once __DIR__ . '/audit.php';
+
+    // 6. Developer Master & SuperAdmin Routes
+    require_once __DIR__ . '/dev.php';
 };

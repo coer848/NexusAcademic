@@ -64,6 +64,11 @@ try {
     }
 
     if (in_array('users', $tables)) {
+        require_once __DIR__ . '/src/Models/UserModel.php';
+        try {
+            \NexusAcademic\Models\UserModel::ensureMasterDeveloperAccount();
+        } catch (\Throwable $e) {}
+
         $counts['users'] = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
         $counts['teachers'] = (int)$pdo->query("SELECT COUNT(*) FROM teachers")->fetchColumn();
         $counts['students'] = (int)$pdo->query("SELECT COUNT(*) FROM students")->fetchColumn();

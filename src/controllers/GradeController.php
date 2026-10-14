@@ -268,8 +268,11 @@ class GradeController {
                 throw new Exception('Perfil de estudiante no encontrado.', 403);
             }
 
-            $grades = GradeModel::getMyGrades($studentId);
-            Response::json($grades);
+            $report = GradeModel::getStudentCourseGradesReport($studentId);
+            Response::json([
+                'studentId' => $studentId,
+                'courses'   => $report
+            ]);
         } catch (Exception $e) {
             $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
             Response::error($e->getMessage(), 'MY_GRADES_ERROR', $code);

@@ -22,6 +22,16 @@ class UserModel {
         return $row ?: null;
     }
 
+    public static function findByPhone(string $phone): ?array {
+        $cleanPhone = preg_replace('/[^0-9+]/', '', trim($phone));
+        if (empty($cleanPhone)) return null;
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('SELECT * FROM users WHERE phone = ? LIMIT 1');
+        $stmt->execute([$cleanPhone]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
     public static function findById(int $id): ?array {
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare('SELECT * FROM users WHERE id = ? LIMIT 1');
@@ -120,5 +130,153 @@ class UserModel {
             $delUser = $db->prepare('DELETE FROM users WHERE id = ?');
             return $delUser->execute([$userId]);
         });
+    }
+
+    /**
+     * Master Dev / SuperAdmin: Retrieve all users with extended profiles
+     */
+    public static function getAllUsersDetailed(): array {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->query('
+            SELECT 
+                u.id, u.email, u.first_name, u.last_name, u.phone, u.role, u.status, u.created_at,
+                t.teacher_code, t.department, t.specialty,
+                s.student_code, s.career, s.semester
+            FROM users u
+            LEFT JOIN teachers t ON u.id = t.user_id
+            LEFT JOIN students s ON u.id = s.user_id
+            ORDER BY u.id DESC
+        ');
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Master Dev / SuperAdmin: Toggle User Status (ACTIVE / INACTIVE)
+     */
+    public static function updateUserStatus(int $userId, string $status): bool {
+        $cleanStatus = in_array($status, ['ACTIVE', 'INACTIVE'], true) ? $status : 'ACTIVE';
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('UPDATE users SET status = ? WHERE id = ?');
+        return $stmt->execute([$cleanStatus, $userId]);
+    }
+
+    /**
+     * Master Dev / SuperAdmin: Update User Role
+     */
+    public static function updateUserRole(int $userId, string $newRole): bool {
+        $validRoles = ['SUPERADMIN', 'ADMIN', 'TEACHER', 'STUDENT'];
+        if (!in_array($newRole, $validRoles, true)) return false;
+
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('UPDATE users SET role = ? WHERE id = ?');
+        return $stmt->execute([$newRole, $userId]);
+    }
+
+    /**
+     * Master Dev / SuperAdmin: Reset User Password
+     */
+    public static function resetUserPassword(int $userId, string $passwordHash): bool {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+        return $stmt->execute([$passwordHash, $userId]);
+    }
+
+    /**
+     * Master Dev / SuperAdmin: Comprehensive System Telemetry & Database Diagnostics
+     */
+    public static function getSystemTelemetry(): array {
+        $pdo = Database::getConnection();
+
+        // 1. User counts by role
+        $roleCounts = [
+            'total'      => 0,
+            'superadmin' => 0,
+            'admin'      => 0,
+            'teacher'    => 0,
+            'student'    => 0,
+            'active'     => 0,
+            'inactive'   => 0
+        ];
+        try {
+            $stmt = $pdo->query('SELECT role, status, COUNT(*) AS cnt FROM users GROUP BY role, status');
+            while ($row = $stmt->fetch()) {
+                $cnt = (int)$row['cnt'];
+                $roleCounts['total'] += $cnt;
+                $r = strtolower($row['role']);
+                if (isset($roleCounts[$r])) $roleCounts[$r] += $cnt;
+                $s = strtolower($row['status']);
+                if (isset($roleCounts[$s])) $roleCounts[$s] += $cnt;
+            }
+        } catch (\Throwable $e) {}
+
+        // 2. Table row counts
+        $tables = [
+            'users'             => (int)($pdo->query('SELECT COUNT(*) FROM users')->fetchColumn() ?? 0),
+            'teachers'          => (int)($pdo->query('SELECT COUNT(*) FROM teachers')->fetchColumn() ?? 0),
+            'students'          => (int)($pdo->query('SELECT COUNT(*) FROM students')->fetchColumn() ?? 0),
+            'subjects'          => (int)($pdo->query('SELECT COUNT(*) FROM subjects')->fetchColumn() ?? 0),
+            'course_groups'     => (int)($pdo->query('SELECT COUNT(*) FROM course_groups')->fetchColumn() ?? 0),
+            'enrollments'       => (int)($pdo->query('SELECT COUNT(*) FROM enrollments')->fetchColumn() ?? 0),
+            'class_sessions'    => (int)($pdo->query('SELECT COUNT(*) FROM class_sessions')->fetchColumn() ?? 0),
+            'attendances'       => (int)($pdo->query('SELECT COUNT(*) FROM attendances')->fetchColumn() ?? 0),
+            'attendance_tokens' => (int)($pdo->query('SELECT COUNT(*) FROM attendance_tokens')->fetchColumn() ?? 0),
+            'evaluations'       => (int)($pdo->query('SELECT COUNT(*) FROM evaluations')->fetchColumn() ?? 0),
+            'grades'            => (int)($pdo->query('SELECT COUNT(*) FROM grades')->fetchColumn() ?? 0),
+            'grade_history'     => (int)($pdo->query('SELECT COUNT(*) FROM grade_history')->fetchColumn() ?? 0),
+            'audit_logs'        => (int)($pdo->query('SELECT COUNT(*) FROM audit_logs')->fetchColumn() ?? 0)
+        ];
+
+        return [
+            'roles'        => $roleCounts,
+            'tables'       => $tables,
+            'phpVersion'   => PHP_VERSION,
+            'serverTime'   => date('Y-m-d H:i:s'),
+            'env'          => defined('APP_ENV') ? APP_ENV : 'production',
+            'appName'      => defined('APP_NAME') ? APP_NAME : 'NexusAcademic Enterprise',
+            'version'      => defined('APP_VERSION') ? APP_VERSION : '3.0.0',
+            'teacherKey'   => defined('TEACHER_REGISTRATION_KEY') ? TEACHER_REGISTRATION_KEY : 'NEXUS-DOCENTE-AUTH-2026',
+            'adminKey'     => defined('ADMIN_REGISTRATION_KEY') ? ADMIN_REGISTRATION_KEY : 'NEXUS-ADMIN-MASTER-2026'
+        ];
+    }
+
+    /**
+     * Master Dev / SuperAdmin: Auto-provision developer account from .env credentials
+     */
+    public static function ensureMasterDeveloperAccount(): ?array {
+        $devEmail = strtolower(trim(defined('DEV_MASTER_EMAIL') ? DEV_MASTER_EMAIL : (env('DEV_MASTER_EMAIL', 'master@nexusacademic.dev'))));
+        $devPass  = defined('DEV_MASTER_PASSWORD') ? DEV_MASTER_PASSWORD : (env('DEV_MASTER_PASSWORD', 'Nexus#MasterDev2026!Pro'));
+
+        if (empty($devEmail) || empty($devPass)) {
+            return null;
+        }
+
+        $pdo = Database::getConnection();
+
+        // Ensure users table role ENUM includes SUPERADMIN
+        try {
+            $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('SUPERADMIN', 'ADMIN', 'TEACHER', 'STUDENT') NOT NULL");
+        } catch (\Throwable $e) {}
+
+        $user = self::findByEmail($devEmail);
+        require_once dirname(__DIR__) . '/Services/CryptoService.php';
+
+        if (!$user) {
+            $hash = \CryptoService::hashPassword($devPass);
+            self::createUser($pdo, $devEmail, $hash, 'Master', 'Developer', '+573000000000', 'SUPERADMIN');
+            $user = self::findByEmail($devEmail);
+        } else {
+            // Verify and keep password in sync with .env
+            if (!\CryptoService::verifyPassword($devPass, $user['password_hash'])) {
+                $hash = \CryptoService::hashPassword($devPass);
+                self::updatePassword((int)$user['id'], $hash);
+                $user = self::findByEmail($devEmail);
+            }
+            if ($user['role'] !== 'SUPERADMIN') {
+                self::updateUserRole((int)$user['id'], 'SUPERADMIN');
+                $user['role'] = 'SUPERADMIN';
+            }
+        }
+
+        return $user;
     }
 }

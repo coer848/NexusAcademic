@@ -174,26 +174,89 @@ class GradeModel {
         return $stmt->fetchAll();
     }
 
-    public static function getMyGrades(int $studentId): array {
+    public static function getStudentCourseGradesReport(int $studentId): array {
         $pdo = Database::getConnection();
-        $stmt = $pdo->prepare('
+
+        // 1. Fetch active enrolled groups for this student
+        $gStmt = $pdo->prepare('
             SELECT 
-                g.*,
-                ev.name AS evaluation_name, ev.type AS evaluation_type, ev.weight, ev.max_score, ev.due_date,
-                cg.id AS group_id, cg.group_code, cg.classroom,
-                s.name AS subject_name, s.code AS subject_code, s.credits,
+                cg.id AS group_id, cg.group_code, cg.schedule, cg.classroom,
+                s.id AS subject_id, s.name AS subject_name, s.code AS subject_code, s.credits,
+                ap.name AS period_name,
                 u.first_name AS teacher_first_name, u.last_name AS teacher_last_name
-            FROM grades g
-            JOIN evaluations ev ON g.evaluation_id = ev.id
-            JOIN course_groups cg ON ev.group_id = cg.id
+            FROM enrollments e
+            JOIN course_groups cg ON e.group_id = cg.id
             JOIN subjects s ON cg.subject_id = s.id
+            JOIN academic_periods ap ON cg.period_id = ap.id
             JOIN teachers t ON cg.teacher_id = t.id
             JOIN users u ON t.user_id = u.id
-            WHERE g.student_id = ?
-            ORDER BY cg.id ASC, ev.due_date ASC
+            WHERE e.student_id = ? AND e.status = "ACTIVE"
+            ORDER BY s.name ASC
         ');
-        $stmt->execute([$studentId]);
-        return $stmt->fetchAll();
+        $gStmt->execute([$studentId]);
+        $groups = $gStmt->fetchAll();
+
+        // 2. Fetch institution passing grade bounds
+        $minPass = 3.0;
+        $maxG = 5.0;
+        try {
+            $instStmt = $pdo->query('SELECT min_passing_grade, max_grade FROM institutions LIMIT 1');
+            $inst = $instStmt ? $instStmt->fetch() : null;
+            if ($inst) {
+                $minPass = (float)($inst['min_passing_grade'] ?? 3.0);
+                $maxG = (float)($inst['max_grade'] ?? 5.0);
+            }
+        } catch (\Throwable $e) {}
+
+        // Load GradeService for weighted calculations
+        $serviceFile = dirname(__DIR__) . '/services/GradeService.php';
+        if (file_exists($serviceFile)) {
+            require_once $serviceFile;
+        }
+
+        $report = [];
+        foreach ($groups as $group) {
+            $groupId = (int)$group['group_id'];
+
+            // Active evaluations for this group
+            $evStmt = $pdo->prepare('SELECT * FROM evaluations WHERE group_id = ? AND status = "ACTIVE" ORDER BY due_date ASC, id ASC');
+            $evStmt->execute([$groupId]);
+            $evaluations = $evStmt->fetchAll();
+
+            // Grades assigned to this student in this group
+            $grStmt = $pdo->prepare('
+                SELECT g.* 
+                FROM grades g
+                JOIN evaluations ev ON g.evaluation_id = ev.id
+                WHERE ev.group_id = ? AND g.student_id = ?
+            ');
+            $grStmt->execute([$groupId, $studentId]);
+            $grades = $grStmt->fetchAll();
+
+            $stats = class_exists('GradeService')
+                ? \GradeService::calculateStudentAverage($evaluations, $grades, $minPass, $maxG)
+                : [
+                    'weightedAverage'      => null,
+                    'accumulatedScore'     => 0.0,
+                    'totalEvaluatedWeight' => 0.0,
+                    'remainingWeight'      => 100.0,
+                    'projectedNeededGrade' => null,
+                    'isPassing'            => false,
+                    'status'               => 'NO_EVALUATIONS',
+                    'details'              => []
+                ];
+
+            $report[] = [
+                'group' => $group,
+                'stats' => $stats
+            ];
+        }
+
+        return $report;
+    }
+
+    public static function getMyGrades(int $studentId): array {
+        return self::getStudentCourseGradesReport($studentId);
     }
 
     public static function getGroupGradesMatrix(int $groupId): array {
