@@ -191,15 +191,31 @@ async function apiFetch(endpoint, options = {}) {
   }
 }
 
-// ================= LIVE CLOCK =================
+// ================= LIVE CLOCK (INSTITUTIONAL CAMPUS WALL CLOCK) =================
 function initLiveClock() {
   const timeDisplay = document.getElementById('timeDisplay');
+  const dateDisplay = document.getElementById('clockDateDisplay');
+  const clockContainer = document.getElementById('liveClock');
+
+  if (!timeDisplay && !clockContainer) return;
+
   function update() {
     const now = new Date();
-    timeDisplay.textContent = now.toLocaleTimeString();
+    if (timeDisplay) {
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      timeDisplay.textContent = `${hours}:${minutes}:${seconds}`;
+    }
+    if (dateDisplay) {
+      const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      dateDisplay.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+    }
   }
-  setInterval(update, 1000);
+
   update();
+  setInterval(update, 1000);
 }
 
 // ================= GEOLOCATION CAPTURE =================
@@ -247,6 +263,20 @@ function showView(viewId) {
     }
   });
 
+  // Auto-close mobile navigation drawer if open
+  const mainNav = document.getElementById('mainNavLinks');
+  const mobileToggle = document.getElementById('btnMobileNavToggle');
+  if (mainNav && mainNav.classList.contains('mobile-open')) {
+    mainNav.classList.remove('mobile-open');
+    if (mobileToggle) {
+      mobileToggle.setAttribute('aria-expanded', 'false');
+      const iconHam = mobileToggle.querySelector('.icon-hamburger');
+      const iconClose = mobileToggle.querySelector('.icon-close');
+      if (iconHam) iconHam.classList.remove('hidden');
+      if (iconClose) iconClose.classList.add('hidden');
+    }
+  }
+
   if (viewId === 'viewProfile') {
     loadUserProfile();
   }
@@ -279,28 +309,32 @@ function updateNavBar(role) {
 
   const profileBtnHtml = `
     <button class="nav-btn" onclick="showView('viewProfile')" id="navBtnProfile" title="Ver mi información y perfil">
-      <i class="fa-solid fa-id-card"></i> Mi Perfil
+      <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <span>Mi Perfil</span>
     </button>
   `;
 
   if (role === 'ADMIN') {
     linksContainer.innerHTML = `
       <button class="nav-btn active" onclick="showView('viewAdmin')">
-        <i class="fa-solid fa-crown"></i> Panel Admin
+        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+        <span>Panel Admin</span>
       </button>
       ${profileBtnHtml}
     `;
   } else if (role === 'TEACHER') {
     linksContainer.innerHTML = `
       <button class="nav-btn active" onclick="showView('viewTeacher')">
-        <i class="fa-solid fa-chalkboard-user"></i> Mis Clases & Asistencia
+        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20v14H2z"/><path d="M8 21h8M12 17v4"/><circle cx="10" cy="8" r="2"/></svg>
+        <span>Mis Clases & Asistencia</span>
       </button>
       ${profileBtnHtml}
     `;
   } else if (role === 'STUDENT') {
     linksContainer.innerHTML = `
       <button class="nav-btn active" onclick="showView('viewStudent')">
-        <i class="fa-solid fa-graduation-cap"></i> Mi Portal Estudiantil
+        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        <span>Mi Portal Estudiantil</span>
       </button>
       ${profileBtnHtml}
     `;
@@ -2324,6 +2358,40 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Perfil actualizado con éxito.', 'success');
       } catch (err) {
         showToast(`Error: ${err.message}`, 'error');
+      }
+    });
+  }
+
+  // Mobile Navigation Hamburger Toggle Listener
+  const btnMobileToggle = document.getElementById('btnMobileNavToggle');
+  const mainNavLinks = document.getElementById('mainNavLinks');
+  if (btnMobileToggle && mainNavLinks) {
+    btnMobileToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = mainNavLinks.classList.toggle('mobile-open');
+      btnMobileToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      const iconHam = btnMobileToggle.querySelector('.icon-hamburger');
+      const iconClose = btnMobileToggle.querySelector('.icon-close');
+      if (iconHam && iconClose) {
+        if (isOpen) {
+          iconHam.classList.add('hidden');
+          iconClose.classList.remove('hidden');
+        } else {
+          iconHam.classList.remove('hidden');
+          iconClose.classList.add('hidden');
+        }
+      }
+    });
+
+    // Close when tapping anywhere outside navbar
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.navbar') && mainNavLinks.classList.contains('mobile-open')) {
+        mainNavLinks.classList.remove('mobile-open');
+        btnMobileToggle.setAttribute('aria-expanded', 'false');
+        const iconHam = btnMobileToggle.querySelector('.icon-hamburger');
+        const iconClose = btnMobileToggle.querySelector('.icon-close');
+        if (iconHam) iconHam.classList.remove('hidden');
+        if (iconClose) iconClose.classList.add('hidden');
       }
     });
   }

@@ -1,19 +1,23 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NexusAcademic - Plataforma Integral & Asistencia QR Dinámica</title>
-  <meta name="description" content="Plataforma académica integral para gestión de estudiantes, docentes, asistencia con QR dinámico criptográfico, evaluaciones, calificaciones y auditoría inmutable.">
-  
+  <meta name="description"
+    content="Plataforma académica integral para gestión de estudiantes, docentes, asistencia con QR dinámico criptográfico, evaluaciones, calificaciones y auditoría inmutable.">
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
   <!-- Icons (FontAwesome 6) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  
+
   <!-- QR Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <!-- jsQR for instant camera frame decoding -->
@@ -22,23 +26,22 @@
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-  <!-- Ambient background glow effects -->
-  <div class="bg-glow bg-glow-1"></div>
-  <div class="bg-glow bg-glow-2"></div>
-  <div class="bg-glow bg-glow-3"></div>
-  <div class="grid-overlay"></div>
 
+<body>
   <!-- Top Navigation Bar -->
   <header class="navbar">
     <div class="nav-container">
       <div class="brand" id="btnBrandHome">
         <div class="brand-icon">
-          <i class="fa-solid fa-graduation-cap"></i>
+          <svg class="svg-brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+            <path d="M6 12.5V17c2.5 2.5 9.5 2.5 12 0v-4.5" />
+            <circle cx="12" cy="10" r="1.5" fill="currentColor" />
+          </svg>
         </div>
         <div class="brand-text">
           <span class="brand-name">Nexus<span class="highlight">Academic</span></span>
-          <span class="brand-tag">ENTERPRISE v3.0</span>
         </div>
       </div>
 
@@ -47,42 +50,84 @@
         <!-- Rendered dynamically -->
       </nav>
 
-      <!-- Nav Actions (Clock, Status, User Menu) -->
+      <!-- Nav Actions (Clock, Status, User Menu, Mobile Toggle) -->
       <div class="nav-actions">
-        <div class="live-clock" id="liveClock">
-          <i class="fa-regular fa-clock"></i>
-          <span id="timeDisplay">00:00:00</span>
+        <div class="live-clock" id="liveClock" title="Hora Oficial del Campus - Sincronizada">
+          <span class="clock-status-dot" aria-hidden="true"></span>
+          <svg class="svg-icon clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          <div class="clock-info">
+            <span class="clock-time" id="timeDisplay">--:--:--</span>
+            <span class="clock-date" id="clockDateDisplay">--</span>
+          </div>
         </div>
 
-        <div id="userProfileBadge" class="user-pill hidden">
+        <div id="userProfileBadge" class="user-pill hidden" title="Ver mi información y perfil">
           <div class="user-avatar-mini" id="userAvatarText">AD</div>
           <div class="user-pill-info">
             <span class="user-pill-name" id="userPillName">Usuario</span>
             <span class="user-pill-role" id="userPillRole">Rol</span>
           </div>
           <button class="btn-icon-logout" id="btnLogout" title="Cerrar Sesión">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
           </button>
         </div>
+
+        <!-- Mobile Navigation Hamburger Toggle -->
+        <button class="btn-mobile-nav-toggle" id="btnMobileNavToggle" aria-label="Abrir menú de navegación"
+          aria-expanded="false">
+          <svg class="icon-hamburger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+          <svg class="icon-close hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
     </div>
   </header>
 
   <!-- Main Application Container -->
   <main class="content-wrapper" id="appMain">
-    
+
     <!-- ================= VIEW 1: AUTHENTICATION / LOGIN & REGISTER ================= -->
     <section id="viewLogin" class="view-section active">
       <div class="login-wrapper">
         <div class="login-card glass-card">
-          
+
           <!-- Auth Tabs Switcher: Login / Register -->
           <div class="auth-tabs-toggle">
             <button type="button" class="auth-toggle-btn active" id="btnAuthTabLogin">
-              <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                <polyline points="10 17 15 12 10 7" />
+                <line x1="15" y1="12" x2="3" y2="12" />
+              </svg>
+              <span>Iniciar Sesión</span>
             </button>
             <button type="button" class="auth-toggle-btn" id="btnAuthTabRegister">
-              <i class="fa-solid fa-user-plus"></i> Crear Cuenta
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="19" y1="8" x2="19" y2="14" />
+                <line x1="22" y1="11" x2="16" y2="11" />
+              </svg>
+              <span>Crear Cuenta</span>
             </button>
           </div>
 
@@ -90,7 +135,11 @@
           <div id="authLoginContainer">
             <div class="login-header">
               <div class="login-badge-icon">
-                <i class="fa-solid fa-shield-halved"></i>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
               </div>
               <h2>Acceso a NexusAcademic</h2>
               <p>Ingrese con sus credenciales institucionales seguras</p>
@@ -98,22 +147,48 @@
 
             <form id="formLogin" class="login-form">
               <div class="form-group">
-                <label for="inputEmail"><i class="fa-solid fa-envelope"></i> Correo Electrónico</label>
+                <label for="inputEmail">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                  </svg>
+                  Correo Electrónico
+                </label>
                 <input type="email" id="inputEmail" placeholder="ejemplo@nexus.edu" required autocomplete="email">
               </div>
 
               <div class="form-group">
-                <label for="inputPassword"><i class="fa-solid fa-lock"></i> Contraseña</label>
+                <label for="inputPassword">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  Contraseña
+                </label>
                 <div class="password-input-wrapper">
-                  <input type="password" id="inputPassword" placeholder="••••••••" required autocomplete="current-password">
-                  <button type="button" class="btn-toggle-password" id="btnTogglePassword">
-                    <i class="fa-regular fa-eye"></i>
+                  <input type="password" id="inputPassword" placeholder="••••••••" required
+                    autocomplete="current-password">
+                  <button type="button" class="btn-toggle-password" id="btnTogglePassword"
+                    aria-label="Mostrar u ocultar contraseña">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
                   </button>
                 </div>
               </div>
 
               <button type="submit" class="btn btn-primary btn-block btn-lg" id="btnLoginSubmit">
-                <i class="fa-solid fa-arrow-right-to-bracket"></i> Iniciar Sesión
+                <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                  <polyline points="10 17 15 12 10 7" />
+                  <line x1="15" y1="12" x2="3" y2="12" />
+                </svg>
+                <span>Iniciar Sesión</span>
               </button>
             </form>
 
@@ -127,7 +202,13 @@
           <div id="authRegisterContainer" class="hidden">
             <div class="login-header">
               <div class="login-badge-icon">
-                <i class="fa-solid fa-user-plus"></i>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <line x1="19" y1="8" x2="19" y2="14" />
+                  <line x1="22" y1="11" x2="16" y2="11" />
+                </svg>
               </div>
               <h2>Registro Institucional</h2>
               <p>Crea tu cuenta de Estudiante o Docente en la base de datos</p>
@@ -136,7 +217,14 @@
             <form id="formRegister" class="login-form">
               <div class="form-row">
                 <div class="form-group">
-                  <label for="regFirstName"><i class="fa-solid fa-user"></i> Nombre</label>
+                  <label for="regFirstName">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    Nombre
+                  </label>
                   <input type="text" id="regFirstName" placeholder="Ej. Camila" required>
                 </div>
                 <div class="form-group">
@@ -147,46 +235,104 @@
 
               <div class="form-row">
                 <div class="form-group">
-                  <label for="regEmail"><i class="fa-solid fa-envelope"></i> Correo Electrónico</label>
+                  <label for="regEmail">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                    Correo Electrónico
+                  </label>
                   <input type="email" id="regEmail" placeholder="usuario@nexus.edu" required>
                 </div>
                 <div class="form-group">
-                  <label for="regPhone"><i class="fa-solid fa-phone"></i> Número Telefónico / Móvil</label>
+                  <label for="regPhone">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path
+                        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    Número Telefónico / Móvil
+                  </label>
                   <input type="tel" id="regPhone" placeholder="Ej. +57 300 123 4567" required autocomplete="tel">
                 </div>
               </div>
 
               <div class="form-group">
-                <label for="regPassword"><i class="fa-solid fa-lock"></i> Contraseña (mínimo 6 caracteres)</label>
+                <label for="regPassword">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  Contraseña (mínimo 6 caracteres)
+                </label>
                 <input type="password" id="regPassword" placeholder="••••••••" required minlength="6">
               </div>
 
               <div class="form-row">
                 <div class="form-group">
-                  <label for="regRole"><i class="fa-solid fa-id-badge"></i> Rol</label>
+                  <label for="regRole">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    Rol
+                  </label>
                   <select id="regRole" class="form-select">
                     <option value="STUDENT">Estudiante (Alumno)</option>
                     <option value="TEACHER">Docente (Profesor)</option>
                   </select>
                 </div>
                 <div class="form-group">
-                  <label for="regCode"><i class="fa-solid fa-hashtag"></i> Código / Matrícula</label>
+                  <label for="regCode">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="4" y1="9" x2="20" y2="9" />
+                      <line x1="4" y1="15" x2="20" y2="15" />
+                      <line x1="10" y1="3" x2="8" y2="21" />
+                      <line x1="16" y1="3" x2="14" y2="21" />
+                    </svg>
+                    Código / Matrícula
+                  </label>
                   <input type="text" id="regCode" placeholder="Ej. EST-2026-99">
                 </div>
               </div>
 
               <div class="form-group" id="groupStudentFields">
-                <label for="regCareer"><i class="fa-solid fa-graduation-cap"></i> Carrera Universitaria</label>
-                <input type="text" id="regCareer" placeholder="Ej. Ingeniería de Sistemas" value="Ingeniería de Software">
+                <label for="regCareer">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                  </svg>
+                  Carrera Universitaria
+                </label>
+                <input type="text" id="regCareer" placeholder="Ej. Ingeniería de Sistemas"
+                  value="Ingeniería de Software">
               </div>
 
               <div class="form-group hidden" id="groupTeacherFields">
-                <label for="regDepartment"><i class="fa-solid fa-building-columns"></i> Departamento / Facultad</label>
+                <label for="regDepartment">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
+                  </svg>
+                  Departamento / Facultad
+                </label>
                 <input type="text" id="regDepartment" placeholder="Ej. Ciencias Computacionales">
               </div>
 
               <button type="submit" class="btn btn-primary btn-block btn-lg" id="btnRegisterSubmit">
-                <i class="fa-solid fa-circle-check"></i> Registrar Cuenta y Acceder
+                <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                <span>Registrar Cuenta y Acceder</span>
               </button>
             </form>
 
@@ -204,13 +350,27 @@
     <section id="viewAdmin" class="view-section hidden">
       <div class="section-header-flex">
         <div>
-          <span class="badge-role admin"><i class="fa-solid fa-crown"></i> Panel de Administración</span>
+          <span class="badge-role admin">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
+            </svg>
+            Panel de Administración
+          </span>
           <h1 class="view-title">Gestión Institucional & Asignación de Clases</h1>
-          <p class="view-subtitle">Supervisión integral de asignaturas, grupos de docentes, estudiantes y bitácora de auditoría.</p>
+          <p class="view-subtitle">Supervisión integral de asignaturas, grupos de docentes, estudiantes y bitácora de
+            auditoría.</p>
         </div>
         <div class="header-actions">
           <button class="btn btn-secondary btn-sm" id="btnRefreshAdminData">
-            <i class="fa-solid fa-rotate"></i> Actualizar Datos
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+              <path d="M16 21h5v-5" />
+            </svg>
+            Actualizar Datos
           </button>
         </div>
       </div>
@@ -218,7 +378,13 @@
       <!-- Admin Metrics Cards Grid -->
       <div class="metrics-grid" id="adminMetricsGrid">
         <div class="metric-card glass-card">
-          <div class="metric-icon blue"><i class="fa-solid fa-user-graduate"></i></div>
+          <div class="metric-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+              <path d="M6 12v5c3 3 9 3 12 0v-5" />
+            </svg>
+          </div>
           <div class="metric-data">
             <span class="metric-label">Estudiantes</span>
             <h3 class="metric-value" id="statAdminStudents">-</h3>
@@ -227,7 +393,17 @@
         </div>
 
         <div class="metric-card glass-card">
-          <div class="metric-icon purple"><i class="fa-solid fa-chalkboard-user"></i></div>
+          <div class="metric-icon purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M2 3h20v14H2z" />
+              <path d="M8 21h8M12 17v4" />
+              <circle cx="10" cy="8" r="2" />
+              <path d="M6 14a4 4 0 0 1 8 0" />
+              <line x1="15" y1="8" x2="18" y2="8" />
+              <line x1="15" y1="11" x2="17" y2="11" />
+            </svg>
+          </div>
           <div class="metric-data">
             <span class="metric-label">Docentes</span>
             <h3 class="metric-value" id="statAdminTeachers">-</h3>
@@ -236,7 +412,18 @@
         </div>
 
         <div class="metric-card glass-card">
-          <div class="metric-icon green"><i class="fa-solid fa-qrcode"></i></div>
+          <div class="metric-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="5.5" y="5.5" width="2" height="2" fill="currentColor" />
+              <rect x="16.5" y="5.5" width="2" height="2" fill="currentColor" />
+              <rect x="5.5" y="16.5" width="2" height="2" fill="currentColor" />
+              <path d="M14 14h3v3h-3zM17 17h4v4h-4zM14 20h3v1h-3zM20 14h1v3h-1z" />
+            </svg>
+          </div>
           <div class="metric-data">
             <span class="metric-label">Asistencias QR</span>
             <h3 class="metric-value" id="statAdminAttendances">-</h3>
@@ -245,7 +432,14 @@
         </div>
 
         <div class="metric-card glass-card">
-          <div class="metric-icon yellow"><i class="fa-solid fa-clipboard-check"></i></div>
+          <div class="metric-icon yellow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+              <rect x="9" y="3" width="6" height="4" rx="1" />
+              <path d="m9 14 2 2 4-4" />
+            </svg>
+          </div>
           <div class="metric-data">
             <span class="metric-label">Calificaciones</span>
             <h3 class="metric-value" id="statAdminGrades">-</h3>
@@ -256,12 +450,58 @@
 
       <!-- Admin Tabs Navigation -->
       <div class="tabs-nav-bar">
-        <button class="tab-btn active" data-tab="tabAdminGroups"><i class="fa-solid fa-book-open"></i> Grupos y Asignación Docente</button>
-        <button class="tab-btn" data-tab="tabAdminTeachers"><i class="fa-solid fa-chalkboard-user"></i> Gestión de Profesores</button>
-        <button class="tab-btn" data-tab="tabAdminSubjects"><i class="fa-solid fa-cubes"></i> Asignaturas</button>
-        <button class="tab-btn" data-tab="tabAdminUsers"><i class="fa-solid fa-users"></i> Estudiantes</button>
-        <button class="tab-btn" data-tab="tabAdminAudit"><i class="fa-solid fa-shield-virus"></i> Bitácora de Auditoría</button>
-        <button class="tab-btn" data-tab="tabAdminGradeHistory"><i class="fa-solid fa-history"></i> Historial de Notas</button>
+        <button class="tab-btn active" data-tab="tabAdminGroups">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+            <path d="M6 6h10M6 10h10" />
+          </svg>
+          <span>Grupos y Clases</span>
+        </button>
+        <button class="tab-btn" data-tab="tabAdminTeachers">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h20v14H2z" />
+            <path d="M8 21h8M12 17v4" />
+            <circle cx="10" cy="8" r="2" />
+          </svg>
+          <span>Gestión Docentes</span>
+        </button>
+        <button class="tab-btn" data-tab="tabAdminSubjects">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="m21.12 6.4-6.05-4.06a2 2 0 0 0-2.17-.05L2.95 8.41a2 2 0 0 0-.95 1.7v5.82a2 2 0 0 0 .88 1.66l6.05 4.07a2 2 0 0 0 2.17.05l9.95-6.12a2 2 0 0 0 .95-1.7V8.06a2 2 0 0 0-.88-1.66Z" />
+          </svg>
+          <span>Asignaturas</span>
+        </button>
+        <button class="tab-btn" data-tab="tabAdminUsers">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span>Estudiantes</span>
+        </button>
+        <button class="tab-btn" data-tab="tabAdminAudit">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>Bitácora Auditoría</span>
+        </button>
+        <button class="tab-btn" data-tab="tabAdminGradeHistory">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <polyline points="12 7 12 12 15 15" />
+          </svg>
+          <span>Historial Notas</span>
+        </button>
       </div>
 
       <!-- Tab Content 1: Groups -->
@@ -425,16 +665,38 @@
     <section id="viewTeacher" class="view-section hidden">
       <div class="section-header-flex">
         <div>
-          <span class="badge-role teacher"><i class="fa-solid fa-chalkboard-user"></i> Portal Docente</span>
+          <span class="badge-role teacher">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 3h20v14H2z" />
+              <path d="M8 21h8M12 17v4" />
+              <circle cx="10" cy="8" r="2" />
+            </svg>
+            Portal Docente
+          </span>
           <h1 class="view-title" id="teacherGreeting">Mis Clases Asignadas</h1>
-          <p class="view-subtitle">Gestión de sesiones, proyección de QR dinámico, registro de actividades y libro de calificaciones.</p>
+          <p class="view-subtitle">Gestión de sesiones, proyección de QR dinámico, registro de actividades y libro de
+            calificaciones.</p>
         </div>
         <div class="header-actions">
           <button class="btn btn-primary btn-sm" id="btnTeacherOpenCreateCourse">
-            <i class="fa-solid fa-plus-circle"></i> Crear Mi Asignatura / Clase
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="16" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+            </svg>
+            Crear Asignatura
           </button>
           <button class="btn btn-secondary btn-sm" id="btnRefreshTeacherData">
-            <i class="fa-solid fa-rotate"></i> Actualizar
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+              <path d="M16 21h5v-5" />
+            </svg>
+            Actualizar
           </button>
         </div>
       </div>
@@ -442,13 +704,30 @@
       <!-- Teacher Group Selector & Active Class Banner -->
       <div class="teacher-group-selector-box glass-card">
         <div class="group-select-inline">
-          <label for="selectTeacherGroup"><i class="fa-solid fa-layer-group"></i> Asignatura / Clase:</label>
+          <label for="selectTeacherGroup">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2" />
+              <polyline points="2 17 12 22 22 17" />
+              <polyline points="2 12 12 17 22 12" />
+            </svg>
+            Asignatura / Clase:
+          </label>
           <select id="selectTeacherGroup" class="form-select"></select>
-          <button class="btn btn-sm btn-glass" id="btnTeacherEditCurrentCourse" title="Editar Nombre, Horario o Aula de esta Clase">
-            <i class="fa-solid fa-pen"></i> Editar
+          <button class="btn btn-sm btn-glass" id="btnTeacherEditCurrentCourse"
+            title="Editar Nombre, Horario o Aula de esta Clase">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+            </svg>
+            Editar
           </button>
-          <button class="btn btn-sm btn-glass text-danger" id="btnTeacherDeleteCurrentCourse" title="Eliminar Esta Asignatura / Grupo">
-            <i class="fa-solid fa-trash"></i>
+          <button class="btn btn-sm btn-glass text-danger" id="btnTeacherDeleteCurrentCourse"
+            title="Eliminar Esta Asignatura / Grupo">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
           </button>
         </div>
         <div class="group-quick-info" id="groupQuickInfo">
@@ -458,16 +737,51 @@
 
       <!-- Teacher Tabs Navigation -->
       <div class="tabs-nav-bar">
-        <button class="tab-btn active" data-tab="tabTeacherAttendance"><i class="fa-solid fa-qrcode"></i> Sesión & Asistencia QR</button>
-        <button class="tab-btn" data-tab="tabTeacherGrades"><i class="fa-solid fa-calculator"></i> Libro de Calificaciones</button>
-        <button class="tab-btn" data-tab="tabTeacherEvaluations"><i class="fa-solid fa-list-check"></i> Actividades & Evaluaciones</button>
-        <button class="tab-btn" data-tab="tabTeacherGradeHistory"><i class="fa-solid fa-clock-rotate-left"></i> Historial Auditado</button>
+        <button class="tab-btn active" data-tab="tabTeacherAttendance">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <rect x="5.5" y="5.5" width="2" height="2" fill="currentColor" />
+            <rect x="16.5" y="5.5" width="2" height="2" fill="currentColor" />
+            <rect x="5.5" y="16.5" width="2" height="2" fill="currentColor" />
+            <path d="M14 14h3v3h-3zM17 17h4v4h-4zM14 20h3v1h-3zM20 14h1v3h-1z" />
+          </svg>
+          <span>Sesión & QR</span>
+        </button>
+        <button class="tab-btn" data-tab="tabTeacherGrades">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="2" width="16" height="20" rx="2" />
+            <line x1="8" y1="6" x2="16" y2="6" />
+            <line x1="16" y1="14" x2="16" y2="18" />
+            <path d="M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M12 18h.01M8 18h.01" />
+          </svg>
+          <span>Calificaciones</span>
+        </button>
+        <button class="tab-btn" data-tab="tabTeacherEvaluations">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="m9 11 3 3L22 4" />
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+          </svg>
+          <span>Actividades & Evaluaciones</span>
+        </button>
+        <button class="tab-btn" data-tab="tabTeacherGradeHistory">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <polyline points="12 7 12 12 15 15" />
+          </svg>
+          <span>Historial Auditado</span>
+        </button>
       </div>
 
       <!-- Tab Content 1: QR & Attendance Live Monitor -->
       <div id="tabTeacherAttendance" class="tab-panel active">
         <div class="attendance-workspace-grid">
-          
+
           <!-- Left: Session Controller & Dynamic QR Display -->
           <div class="qr-session-card glass-card">
             <div class="card-header">
@@ -484,7 +798,8 @@
             <div class="session-form-controls" id="sessionInactiveControls">
               <div class="form-group">
                 <label for="inputSessionTopic"><i class="fa-solid fa-heading"></i> Tema de la Clase / Sesión</label>
-                <input type="text" id="inputSessionTopic" placeholder="Ej. Patrones de Diseño & Criptografía..." value="Sesión de Clase en Vivo">
+                <input type="text" id="inputSessionTopic" placeholder="Ej. Patrones de Diseño & Criptografía..."
+                  value="Sesión de Clase en Vivo">
               </div>
               <button class="btn btn-primary btn-block btn-lg" id="btnStartSession">
                 <i class="fa-solid fa-play"></i> Iniciar Sesión y Proyectar QR
@@ -493,7 +808,8 @@
 
             <!-- Active QR Stage (Shown when session is active) -->
             <div class="active-qr-stage hidden" id="activeQRStage">
-              <div class="qr-frame-wrapper" id="qrFrameWrapper" title="Haga clic para proyectar en Pantalla Completa / Modo Aula">
+              <div class="qr-frame-wrapper" id="qrFrameWrapper"
+                title="Haga clic para proyectar en Pantalla Completa / Modo Aula">
                 <div class="qr-canvas-box" id="qrCanvasBox">
                   <div id="dynamicQRElement"></div>
                 </div>
@@ -537,7 +853,8 @@
                 <h3>Monitor de Asistencia en Vivo</h3>
               </div>
               <div class="attendance-counter-badge">
-                <span id="counterPresent">0</span> / <span id="counterTotal">0</span> Presentes (<span id="counterPercent">0%</span>)
+                <span id="counterPresent">0</span> / <span id="counterTotal">0</span> Presentes (<span
+                  id="counterPercent">0%</span>)
               </div>
             </div>
 
@@ -554,7 +871,8 @@
                 </thead>
                 <tbody id="tbodySessionAttendance">
                   <tr>
-                    <td colspan="5" class="empty-state-cell">Inicie una sesión para monitorear asistencia en tiempo real.</td>
+                    <td colspan="5" class="empty-state-cell">Inicie una sesión para monitorear asistencia en tiempo
+                      real.</td>
                   </tr>
                 </tbody>
               </table>
@@ -568,7 +886,8 @@
         <div class="panel-header-actions">
           <div>
             <h3>Libro de Calificaciones y Matriz Ponderada</h3>
-            <p class="subtitle-text">Ingresa o edita notas (0.0 a 5.0). Haz clic en cualquier nota para calificar con motivo auditado.</p>
+            <p class="subtitle-text">Ingresa o edita notas (0.0 a 5.0). Haz clic en cualquier nota para calificar con
+              motivo auditado.</p>
           </div>
           <div class="actions-group">
             <button class="btn btn-secondary btn-sm" id="btnExportGradesCSV">
@@ -642,29 +961,76 @@
     <section id="viewStudent" class="view-section hidden">
       <div class="section-header-flex">
         <div>
-          <span class="badge-role student"><i class="fa-solid fa-graduation-cap"></i> Portal Estudiante</span>
+          <span class="badge-role student">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+              <path d="M6 12v5c3 3 9 3 12 0v-5" />
+            </svg>
+            Portal Estudiante
+          </span>
           <h1 class="view-title" id="studentGreeting">Mi Récord Académico</h1>
-          <p class="view-subtitle">Registro de asistencia con cámara QR, consulta de notas y cálculo de promedio ponderado.</p>
+          <p class="view-subtitle">Registro de asistencia con cámara QR, consulta de notas y cálculo de promedio
+            ponderado.</p>
         </div>
         <div class="header-actions">
           <button class="btn btn-secondary btn-sm" id="btnRefreshStudentData">
-            <i class="fa-solid fa-rotate"></i> Actualizar Notas
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+              <path d="M16 21h5v-5" />
+            </svg>
+            Actualizar Notas
           </button>
         </div>
       </div>
 
       <!-- Student Tabs Navigation -->
       <div class="tabs-nav-bar">
-        <button class="tab-btn active" data-tab="tabStudentScanner"><i class="fa-solid fa-camera"></i> Escáner de Asistencia QR</button>
-        <button class="tab-btn" data-tab="tabStudentGrades"><i class="fa-solid fa-award"></i> Mis Calificaciones & Promedios</button>
-        <button class="tab-btn" data-tab="tabStudentEnrollment"><i class="fa-solid fa-plus-circle"></i> Matricular Asignaturas</button>
-        <button class="tab-btn" data-tab="tabStudentAttendanceHistory"><i class="fa-solid fa-calendar-check"></i> Historial de Asistencia</button>
+        <button class="tab-btn active" data-tab="tabStudentScanner">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
+          <span>Escáner QR</span>
+        </button>
+        <button class="tab-btn" data-tab="tabStudentGrades">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="6" />
+            <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+          </svg>
+          <span>Calificaciones</span>
+        </button>
+        <button class="tab-btn" data-tab="tabStudentEnrollment">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="16" />
+            <line x1="8" y1="12" x2="16" y2="12" />
+          </svg>
+          <span>Matricular Asignaturas</span>
+        </button>
+        <button class="tab-btn" data-tab="tabStudentAttendanceHistory">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+            <path d="m9 16 2 2 4-4" />
+          </svg>
+          <span>Historial Asistencia</span>
+        </button>
       </div>
 
       <!-- Tab Content 1: Scanner with Real Camera Feed -->
       <div id="tabStudentScanner" class="tab-panel active">
         <div class="scanner-grid-layout">
-          
+
           <!-- Scanner Camera Card -->
           <div class="scanner-card glass-card">
             <div class="card-header">
@@ -682,7 +1048,7 @@
               <!-- Live Video Feed -->
               <video id="scannerVideo" playsinline autoplay muted class="camera-video-feed"></video>
               <canvas id="scannerCanvas" class="hidden"></canvas>
-              
+
               <div class="scanner-viewfinder-overlay" id="scannerOverlay">
                 <div class="corner top-left"></div>
                 <div class="corner top-right"></div>
@@ -729,8 +1095,10 @@
             </div>
 
             <div class="manual-json-input-box">
-              <label for="inputManualQRPayload"><i class="fa-solid fa-code"></i> O pegar token/payload QR firmado:</label>
-              <textarea id="inputManualQRPayload" rows="2" placeholder='{"sessionId":1,"nonce":"...","timestamp":17...}'></textarea>
+              <label for="inputManualQRPayload"><i class="fa-solid fa-code"></i> O pegar token/payload QR
+                firmado:</label>
+              <textarea id="inputManualQRPayload" rows="2"
+                placeholder='{"sessionId":1,"nonce":"...","timestamp":17...}'></textarea>
               <button class="btn btn-secondary btn-block btn-sm" id="btnSubmitManualPayload">
                 <i class="fa-solid fa-check"></i> Procesar Token Manual
               </button>
@@ -800,13 +1168,29 @@
     <section id="viewProfile" class="view-section hidden">
       <div class="section-header-flex">
         <div>
-          <span class="badge-role student" id="profileBadgeRole"><i class="fa-solid fa-id-card"></i> Perfil Institucional</span>
+          <span class="badge-role student" id="profileBadgeRole">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" />
+              <line x1="8" y1="21" x2="16" y2="21" />
+              <line x1="12" y1="17" x2="12" y2="21" />
+            </svg>
+            Perfil Institucional
+          </span>
           <h1 class="view-title">Mi Perfil & Datos de Cuenta</h1>
-          <p class="view-subtitle">Consulta y actualiza tu información registrada, credenciales y opciones de cuenta.</p>
+          <p class="view-subtitle">Consulta y actualiza tu información registrada, credenciales y opciones de cuenta.
+          </p>
         </div>
         <div class="header-actions">
           <button class="btn btn-secondary btn-sm" id="btnRefreshProfile">
-            <i class="fa-solid fa-rotate"></i> Actualizar Perfil
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+              <path d="M16 21h5v-5" />
+            </svg>
+            Actualizar Perfil
           </button>
         </div>
       </div>
@@ -827,26 +1211,63 @@
 
             <div class="profile-info-list">
               <div class="profile-info-item">
-                <div class="info-label"><i class="fa-solid fa-phone"></i> Teléfono Móvil</div>
+                <div class="info-label">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                      d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                  <span>Teléfono Móvil</span>
+                </div>
                 <div class="info-val" id="profileDisplayPhone">No registrado</div>
               </div>
               <div class="profile-info-item">
-                <div class="info-label"><i class="fa-solid fa-fingerprint"></i> ID de Usuario</div>
+                <div class="info-label">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 11c0 2.5-1.5 4.5-3 5s-3-1.5-3-4c0-3.3 2.7-6 6-6s6 2.7 6 6c0 1.7-.7 3.2-1.8 4.2" />
+                  </svg>
+                  <span>ID de Usuario</span>
+                </div>
                 <div class="info-val font-mono" id="profileDisplayId">#0</div>
               </div>
               <div class="profile-info-item">
-                <div class="info-label"><i class="fa-solid fa-circle-check"></i> Estado de Cuenta</div>
+                <div class="info-label">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                  <span>Estado de Cuenta</span>
+                </div>
                 <div class="info-val"><span class="badge-status-ok" id="profileDisplayStatus">ACTIVO</span></div>
               </div>
               <div class="profile-info-item">
-                <div class="info-label"><i class="fa-regular fa-calendar-check"></i> Miembro Desde</div>
+                <div class="info-label">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                    <path d="m9 16 2 2 4-4" />
+                  </svg>
+                  <span>Miembro Desde</span>
+                </div>
                 <div class="info-val" id="profileDisplayCreatedAt">-</div>
               </div>
             </div>
 
             <!-- Ficha Complementaria Según Rol -->
             <div class="profile-role-card glass-card" id="profileRoleDetailsCard">
-              <h4 id="profileRoleDetailsTitle"><i class="fa-solid fa-graduation-cap"></i> Información Académica</h4>
+              <h4 id="profileRoleDetailsTitle">
+                <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                  <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                </svg>
+                <span>Información Académica</span>
+              </h4>
               <div class="profile-role-details-content" id="profileRoleDetailsContent">
                 <!-- Rellenado dinámicamente -->
               </div>
@@ -856,11 +1277,18 @@
 
         <!-- Columna Derecha: Edición de Datos, Seguridad y Zona de Peligro -->
         <div class="profile-main-col">
-          
+
           <!-- Card 1: Editar Datos Personales -->
           <div class="glass-card profile-section-card">
             <div class="card-title-group">
-              <div class="card-icon-tag"><i class="fa-solid fa-user-pen"></i></div>
+              <div class="card-icon-tag">
+                <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                  <path d="m18 8 4 4-6 6-4 1 1-4Z" />
+                </svg>
+              </div>
               <div>
                 <h3>Información de Contacto y Datos Personales</h3>
                 <p>Modifica tu nombre, teléfono y datos de tu registro institucional.</p>
@@ -870,7 +1298,14 @@
             <form id="formUpdateProfile" class="profile-form">
               <div class="form-row">
                 <div class="form-group">
-                  <label for="inputProfileFirstName"><i class="fa-solid fa-user"></i> Nombre</label>
+                  <label for="inputProfileFirstName">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    Nombre
+                  </label>
                   <input type="text" id="inputProfileFirstName" required placeholder="Tu nombre">
                 </div>
                 <div class="form-group">
@@ -881,23 +1316,54 @@
 
               <div class="form-row">
                 <div class="form-group">
-                  <label for="inputProfileEmail"><i class="fa-solid fa-envelope"></i> Correo Electrónico (Institucional)</label>
-                  <input type="email" id="inputProfileEmail" disabled title="El correo institucional no puede modificarse directamente">
+                  <label for="inputProfileEmail">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                    Correo Electrónico (Institucional)
+                  </label>
+                  <input type="email" id="inputProfileEmail" disabled
+                    title="El correo institucional no puede modificarse directamente">
                 </div>
                 <div class="form-group">
-                  <label for="inputProfilePhone"><i class="fa-solid fa-phone"></i> Número Telefónico / Móvil</label>
-                  <input type="tel" id="inputProfilePhone" placeholder="Ej. +57 300 123 4567" required autocomplete="tel">
+                  <label for="inputProfilePhone">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path
+                        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    Número Telefónico / Móvil
+                  </label>
+                  <input type="tel" id="inputProfilePhone" placeholder="Ej. +57 300 123 4567" required
+                    autocomplete="tel">
                 </div>
               </div>
 
               <!-- Campos dinámicos para Estudiantes -->
               <div id="profileStudentExtraFields" class="form-row hidden">
                 <div class="form-group">
-                  <label for="inputProfileCareer"><i class="fa-solid fa-graduation-cap"></i> Carrera Universitaria</label>
+                  <label for="inputProfileCareer">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                      <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                    </svg>
+                    Carrera Universitaria
+                  </label>
                   <input type="text" id="inputProfileCareer" placeholder="Ej. Ingeniería de Software">
                 </div>
                 <div class="form-group">
-                  <label for="inputProfileSemester"><i class="fa-solid fa-layer-group"></i> Semestre</label>
+                  <label for="inputProfileSemester">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                      <polyline points="2 17 12 22 22 17" />
+                      <polyline points="2 12 12 17 22 12" />
+                    </svg>
+                    Semestre
+                  </label>
                   <input type="number" id="inputProfileSemester" min="1" max="12" placeholder="1">
                 </div>
               </div>
@@ -905,18 +1371,37 @@
               <!-- Campos dinámicos para Docentes -->
               <div id="profileTeacherExtraFields" class="form-row hidden">
                 <div class="form-group">
-                  <label for="inputProfileDept"><i class="fa-solid fa-building-columns"></i> Departamento / Facultad</label>
+                  <label for="inputProfileDept">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
+                    </svg>
+                    Departamento / Facultad
+                  </label>
                   <input type="text" id="inputProfileDept" placeholder="Ej. Facultad de Ingeniería">
                 </div>
                 <div class="form-group">
-                  <label for="inputProfileSpecialty"><i class="fa-solid fa-award"></i> Especialidad</label>
+                  <label for="inputProfileSpecialty">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="8" r="6" />
+                      <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+                    </svg>
+                    Especialidad
+                  </label>
                   <input type="text" id="inputProfileSpecialty" placeholder="Ej. Algoritmia y Criptografía">
                 </div>
               </div>
 
               <div class="form-actions-right">
                 <button type="submit" class="btn btn-primary" id="btnSaveProfile">
-                  <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios en mi Perfil
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                    <polyline points="17 21 17 13 7 13 7 21" />
+                    <polyline points="7 3 7 8 15 8" />
+                  </svg>
+                  <span>Guardar Cambios en mi Perfil</span>
                 </button>
               </div>
             </form>
@@ -925,7 +1410,12 @@
           <!-- Card 2: Seguridad y Cambio de Contraseña -->
           <div class="glass-card profile-section-card">
             <div class="card-title-group">
-              <div class="card-icon-tag"><i class="fa-solid fa-shield-halved"></i></div>
+              <div class="card-icon-tag">
+                <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+              </div>
               <div>
                 <h3>Seguridad & Cambio de Contraseña</h3>
                 <p>Protege tu cuenta actualizando tu contraseña periódicamente.</p>
@@ -935,18 +1425,41 @@
             <form id="formProfileChangePassword" class="profile-form">
               <div class="form-row">
                 <div class="form-group">
-                  <label for="inputProfileCurrentPass"><i class="fa-solid fa-lock"></i> Contraseña Actual</label>
-                  <input type="password" id="inputProfileCurrentPass" placeholder="••••••••" required autocomplete="current-password">
+                  <label for="inputProfileCurrentPass">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    Contraseña Actual
+                  </label>
+                  <input type="password" id="inputProfileCurrentPass" placeholder="••••••••" required
+                    autocomplete="current-password">
                 </div>
                 <div class="form-group">
-                  <label for="inputProfileNewPass"><i class="fa-solid fa-key"></i> Nueva Contraseña (mínimo 6 caracteres)</label>
-                  <input type="password" id="inputProfileNewPass" placeholder="••••••••" required minlength="6" autocomplete="new-password">
+                  <label for="inputProfileNewPass">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path
+                        d="m21 2-2 2m-1.5 1.5L14 9l-1.5-1.5L10 10l1.5 1.5L4 19l-2 3 3-2 7.5-7.5L14 14l2.5-2.5-1.5-1.5 3.5-3.5M21 2l-3.5 3.5" />
+                    </svg>
+                    Nueva Contraseña (mínimo 6 caracteres)
+                  </label>
+                  <input type="password" id="inputProfileNewPass" placeholder="••••••••" required minlength="6"
+                    autocomplete="new-password">
                 </div>
               </div>
 
               <div class="form-actions-right">
                 <button type="submit" class="btn btn-secondary" id="btnUpdatePassword">
-                  <i class="fa-solid fa-arrows-rotate"></i> Actualizar Contraseña
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                    <path d="M16 21h5v-5" />
+                  </svg>
+                  <span>Actualizar Contraseña</span>
                 </button>
               </div>
             </form>
@@ -955,17 +1468,29 @@
           <!-- Card 3: Zona de Peligro - Eliminación Definitiva de Cuenta -->
           <div class="glass-card profile-danger-card">
             <div class="danger-header">
-              <div class="danger-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+              <div class="danger-icon">
+                <svg class="svg-icon" style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
               <div>
                 <h3 class="danger-title">Zona de Peligro — Eliminar Cuenta Definitivamente</h3>
                 <p class="danger-desc">
-                  Al eliminar tu cuenta, todos tus datos personales, accesos, registros de perfil y credenciales se borrarán permanentemente del sistema. Esta acción es <strong>definitiva e irreversible</strong>.
+                  Al eliminar tu cuenta, todos tus datos personales, accesos, registros de perfil y credenciales se
+                  borrarán permanentemente del sistema. Esta acción es <strong>definitiva e irreversible</strong>.
                 </p>
               </div>
             </div>
             <div class="danger-actions">
               <button type="button" class="btn btn-danger" id="btnOpenDeleteAccountModal">
-                <i class="fa-solid fa-trash-can"></i> Eliminar mi Cuenta Definitivamente
+                <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+                <span>Eliminar mi Cuenta Definitivamente</span>
               </button>
             </div>
           </div>
@@ -1080,7 +1605,8 @@
 
         <div class="form-group">
           <label for="inputGradeReason">Motivo del Cambio (Auditado en el historial)</label>
-          <input type="text" id="inputGradeReason" placeholder="Ej. Revisión presencial de informe..." required value="Calificación de actividad">
+          <input type="text" id="inputGradeReason" placeholder="Ej. Revisión presencial de informe..." required
+            value="Calificación de actividad">
         </div>
 
         <div class="form-group">
@@ -1279,8 +1805,10 @@
         <input type="hidden" id="teacherCourseEditGroupId">
 
         <div class="form-group">
-          <label for="inputTeacherSubName"><i class="fa-solid fa-book"></i> Nombre de la Asignatura que va a Impartir</label>
-          <input type="text" id="inputTeacherSubName" placeholder="Ej. Inteligencia Artificial, Bases de Datos, Cálculo..." required>
+          <label for="inputTeacherSubName"><i class="fa-solid fa-book"></i> Nombre de la Asignatura que va a
+            Impartir</label>
+          <input type="text" id="inputTeacherSubName"
+            placeholder="Ej. Inteligencia Artificial, Bases de Datos, Cálculo..." required>
         </div>
 
         <div class="form-row">
@@ -1307,7 +1835,8 @@
 
         <div class="form-group">
           <label for="inputTeacherDesc">Descripción / Objetivos del Curso</label>
-          <textarea id="inputTeacherDesc" rows="2" placeholder="Temas clave o información para los alumnos..."></textarea>
+          <textarea id="inputTeacherDesc" rows="2"
+            placeholder="Temas clave o información para los alumnos..."></textarea>
         </div>
 
         <div class="modal-actions">
@@ -1339,7 +1868,8 @@
         </div>
         <div class="fs-telemetry-item counter">
           <i class="fa-solid fa-users"></i>
-          <span>Presentes: <strong id="fsCounterPresent">0</strong> / <strong id="fsCounterTotal">0</strong> (<strong id="fsCounterPercent">0%</strong>)</span>
+          <span>Presentes: <strong id="fsCounterPresent">0</strong> / <strong id="fsCounterTotal">0</strong> (<strong
+              id="fsCounterPercent">0%</strong>)</span>
         </div>
       </div>
 
@@ -1349,6 +1879,8 @@
         </button>
       </div>
     </div>
+  </div>
+
   <!-- Modal 9: Confirm Account Permanent Deletion -->
   <div class="modal-overlay hidden" id="modalDeleteAccount">
     <div class="modal-box glass-card modal-box-danger">
@@ -1365,18 +1897,23 @@
           <i class="fa-solid fa-triangle-exclamation"></i>
           <div>
             <strong>¡Atención: Acción Destructiva e Irreversible!</strong>
-            <p>Se borrará permanentemente tu usuario en NexusAcademic. No podrás volver a ingresar con este correo ni recuperar tu información académica asociada.</p>
+            <p>Se borrará permanentemente tu usuario en NexusAcademic. No podrás volver a ingresar con este correo ni
+              recuperar tu información académica asociada.</p>
           </div>
         </div>
 
         <div class="form-group" style="margin-top: 1.25rem;">
-          <label for="inputDeletePassword"><i class="fa-solid fa-lock"></i> Introduce tu contraseña actual para confirmar:</label>
-          <input type="password" id="inputDeletePassword" placeholder="••••••••" required autocomplete="current-password">
+          <label for="inputDeletePassword"><i class="fa-solid fa-lock"></i> Introduce tu contraseña actual para
+            confirmar:</label>
+          <input type="password" id="inputDeletePassword" placeholder="••••••••" required
+            autocomplete="current-password">
         </div>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
-          <label class="checkbox-container" style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; font-size: 0.9rem; color: var(--text-muted);">
-            <input type="checkbox" id="checkConfirmDelete" required style="margin-top: 0.2rem; cursor: pointer; width: 1.1rem; height: 1.1rem;">
+          <label class="checkbox-container"
+            style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; font-size: 0.9rem; color: var(--text-muted);">
+            <input type="checkbox" id="checkConfirmDelete" required
+              style="margin-top: 0.2rem; cursor: pointer; width: 1.1rem; height: 1.1rem;">
             <span>Entiendo que esta acción borrará permanentemente mi usuario y no se podrá deshacer.</span>
           </label>
         </div>
@@ -1402,7 +1939,8 @@
         <span>NexusAcademic Enterprise • Sistema Integral de Gestión Académica & Asistencia QR</span>
       </div>
       <p class="footer-copy">
-        © 2026 NexusAcademic Platform. Diseñado con Vanilla CSS Glassmorphism, SQLite Transaccional & Node.js ES Modules.
+        © 2026 NexusAcademic Platform. Diseñado con Vanilla CSS Glassmorphism, SQLite Transaccional & Node.js ES
+        Modules.
       </p>
     </div>
   </footer>
@@ -1410,4 +1948,5 @@
   <!-- Main Client Script -->
   <script src="js/app.js"></script>
 </body>
+
 </html>
