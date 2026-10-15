@@ -1,0 +1,43 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4] [cursor=pointer]: NexusAcademic
+      - navigation
+      - generic [ref=e12]:
+        - generic "Hora Oficial del Campus - Sincronizada" [ref=e13]:
+          - generic [ref=e18]:
+            - generic [ref=e19]: 07:05:08 p. m.
+            - generic [ref=e20]: Mié, 14 oct 2026
+        - button "Alternar tema" [ref=e21] [cursor=pointer]
+  - main [ref=e24]:
+    - generic [ref=e27]:
+      - generic [ref=e28]:
+        - button "Iniciar Sesión" [ref=e29] [cursor=pointer]
+        - button "Crear Cuenta" [ref=e34] [cursor=pointer]
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - heading "Acceso a NexusAcademic" [level=2] [ref=e45]
+          - paragraph [ref=e46]: Ingrese con sus credenciales institucionales seguras
+        - generic [ref=e47]:
+          - generic [ref=e48]:
+            - generic [ref=e49]: Correo Electrónico
+            - textbox "Correo Electrónico" [ref=e53]:
+              - /placeholder: ejemplo@nexus.edu
+          - generic [ref=e54]:
+            - generic [ref=e55]: Contraseña
+            - generic [ref=e59]:
+              - textbox "Contraseña" [ref=e60]:
+                - /placeholder: ••••••••
+              - button "Mostrar u ocultar contraseña" [ref=e61] [cursor=pointer]
+          - button "Iniciar Sesión" [ref=e65] [cursor=pointer]
+        - generic [ref=e70]:
+          - generic [ref=e71]: ¿No tienes una cuenta institucional?
+          - button "Registrarse aquí" [ref=e72] [cursor=pointer]
+    - text: +  +          +             
+  - text:                   
+  - contentinfo [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 
+        - generic [ref=e77]: NexusAcademic Enterprise • Sistema Integral de Gestión Académica & Asistencia QR
+      - paragraph [ref=e78]: © 2026 NexusAcademic Platform. Diseñado con Vanilla CSS Glassmorphism, SQLite Transaccional & Node.js ES Modules.

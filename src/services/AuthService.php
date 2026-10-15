@@ -48,7 +48,11 @@ class AuthService {
             throw new Exception('El rol debe ser ADMIN, TEACHER o STUDENT.', 400);
         }
 
-        if (UserModel::findByEmail($email)) {
+        $existing = UserModel::findByEmail($email);
+        if ($existing) {
+            if (($existing['status'] ?? '') === 'INACTIVE') {
+                throw new Exception('Esta cuenta institucional ya existe pero se encuentra en modo apagado (desactivada). Por favor inicia sesión con tu contraseña para reactivarla.', 409);
+            }
             throw new Exception('El correo electrónico ya se encuentra registrado.', 409);
         }
 
@@ -56,6 +60,9 @@ class AuthService {
         if (!empty($phone)) {
             $existingPhone = UserModel::findByPhone($phone);
             if ($existingPhone) {
+                if (($existingPhone['status'] ?? '') === 'INACTIVE') {
+                    throw new Exception('El número telefónico pertenece a una cuenta en modo apagado. Inicia sesión con tus credenciales para reactivarla.', 409);
+                }
                 throw new Exception('El número telefónico ya se encuentra asociado a otra cuenta institucional registrada.', 409);
             }
         }
@@ -141,12 +148,16 @@ class AuthService {
             throw new Exception('Credenciales inválidas. Verifique correo o contraseña.', 401);
         }
 
-        if ($user['status'] !== 'ACTIVE') {
-            throw new Exception('La cuenta se encuentra inactiva o deshabilitada. Contacte a la administración.', 403);
-        }
-
         if (!CryptoService::verifyPassword($password, $user['password_hash'])) {
             throw new Exception('Credenciales inválidas. Verifique correo o contraseña.', 401);
+        }
+
+        $wasReactivated = false;
+        if ($user['status'] !== 'ACTIVE') {
+            UserModel::updateUserStatus((int)$user['id'], 'ACTIVE');
+            AuditModel::log((int)$user['id'], 'ACCOUNT_REACTIVATED', 'AUTH', (string)$user['id'], ['email' => $user['email']], $clientIp);
+            $user['status'] = 'ACTIVE';
+            $wasReactivated = true;
         }
 
         // Load profile IDs
@@ -172,8 +183,9 @@ class AuthService {
         AuditModel::log((int)$user['id'], 'LOGIN_SUCCESS', 'AUTH', (string)$user['id'], ['role' => $user['role']], $clientIp);
 
         return [
-            'token' => $token,
-            'user'  => [
+            'token'       => $token,
+            'reactivated' => $wasReactivated,
+            'user'        => [
                 'id'             => (int)$user['id'],
                 'email'          => $user['email'],
                 'firstName'      => $user['first_name'],
@@ -268,7 +280,11 @@ class AuthService {
 
     public static function deleteAccount(array $user, string $password, ?string $clientIp = null): void {
         if (empty($password)) {
-            throw new Exception('Debe ingresar su contraseña actual para confirmar la eliminación de la cuenta.', 400);
+            throw new Exception('Debe ingresar su contraseña actual para confirmar la desactivación de la cuenta.', 400);
+        }
+
+        if (($user['role'] ?? '') === 'SUPERADMIN') {
+            throw new Exception('La cuenta del Programador / SuperAdmin no puede ser desactivada.', 400);
         }
 
         $dbUser = UserModel::findById((int)$user['id']);
@@ -277,10 +293,11 @@ class AuthService {
         }
 
         if (!CryptoService::verifyPassword($password, $dbUser['password_hash'])) {
-            throw new Exception('Contraseña incorrecta. No se puede proceder con la eliminación.', 401);
+            throw new Exception('Contraseña incorrecta. No se puede proceder con la desactivación.', 401);
         }
 
-        UserModel::deleteAccount((int)$user['id'], $dbUser['role']);
-        AuditModel::log((int)$user['id'], 'ACCOUNT_DELETED', 'USER', (string)$user['id'], ['email' => $dbUser['email'], 'role' => $dbUser['role']], $clientIp);
+        // Modo Apagado / Suspensión Segura (preserva integridad relacional)
+        UserModel::updateUserStatus((int)$user['id'], 'INACTIVE');
+        AuditModel::log((int)$user['id'], 'ACCOUNT_DEACTIVATED', 'USER', (string)$user['id'], ['email' => $dbUser['email'], 'role' => $dbUser['role']], $clientIp);
     }
 }

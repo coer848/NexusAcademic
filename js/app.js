@@ -191,13 +191,39 @@ async function apiFetch(endpoint, options = {}) {
   }
 }
 
-// ================= LIVE CLOCK =================
+// ================= LIVE CLOCK (COLOMBIA BOGOTÁ UTC-5 TIME & DATE) =================
 function initLiveClock() {
   const timeDisplay = document.getElementById('timeDisplay');
+  const dateDisplay = document.getElementById('clockDateDisplay');
+
   function update() {
     const now = new Date();
-    timeDisplay.textContent = now.toLocaleTimeString();
+    try {
+      if (timeDisplay) {
+        timeDisplay.textContent = new Intl.DateTimeFormat('es-CO', {
+          timeZone: 'America/Bogota',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        }).format(now);
+      }
+      if (dateDisplay) {
+        const dateStr = new Intl.DateTimeFormat('es-CO', {
+          timeZone: 'America/Bogota',
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        }).format(now);
+        dateDisplay.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+      }
+    } catch (e) {
+      if (timeDisplay) timeDisplay.textContent = now.toLocaleTimeString();
+      if (dateDisplay) dateDisplay.textContent = now.toLocaleDateString();
+    }
   }
+
   setInterval(update, 1000);
   update();
 }
@@ -367,7 +393,11 @@ async function login(email, password) {
     AppState.currentRole = data.user.role;
 
     sfx.playSuccess();
-    showToast(`¡Bienvenido/a, ${data.user.firstName}!`, 'success');
+    if (data.reactivated) {
+      showToast('¡Tu cuenta ha sido reactivada con éxito! Has salido del Modo Apagado.', 'success');
+    } else {
+      showToast(`¡Bienvenido/a, ${data.user.firstName}!`, 'success');
+    }
 
     updateNavBar(data.user.role);
 
@@ -401,11 +431,20 @@ async function handleRegisterSubmit(e) {
   const code = document.getElementById('regCode').value.trim();
   const career = document.getElementById('regCareer').value.trim();
   const department = document.getElementById('regDepartment').value.trim();
+  const adminPosition = document.getElementById('regAdminPosition') ? document.getElementById('regAdminPosition').value.trim() : '';
   const institutionalKey = document.getElementById('regInstitutionalKey') ? document.getElementById('regInstitutionalKey').value.trim() : '';
 
   if (role === 'TEACHER' && !institutionalKey) {
     sfx.playError();
     showToast('El registro de Docentes requiere la Clave de Autorización Institucional.', 'error');
+    const inputKey = document.getElementById('regInstitutionalKey');
+    if (inputKey) inputKey.focus();
+    return;
+  }
+
+  if (role === 'ADMIN' && !institutionalKey) {
+    sfx.playError();
+    showToast('El registro de Personal Administrativo requiere la Clave de Seguridad Institucional.', 'error');
     const inputKey = document.getElementById('regInstitutionalKey');
     if (inputKey) inputKey.focus();
     return;
@@ -423,8 +462,8 @@ async function handleRegisterSubmit(e) {
         role: role,
         code: code || undefined,
         career: role === 'STUDENT' ? career : undefined,
-        department: role === 'TEACHER' ? department : undefined,
-        institutional_key: role === 'TEACHER' ? institutionalKey : undefined
+        department: role === 'TEACHER' ? department : (role === 'ADMIN' ? adminPosition : undefined),
+        institutional_key: (role === 'TEACHER' || role === 'ADMIN') ? institutionalKey : undefined
       }
     });
 
@@ -587,13 +626,13 @@ async function loadUserProfile() {
     const inpSpec = document.getElementById('inputProfileSpecialty');
     if (inpSpec) inpSpec.value = u.teacher?.specialty || '';
 
-  } else if (u.role === 'ADMIN') {
+  } else if (u.role === 'ADMIN' || u.role === 'SUPERADMIN') {
     if (roleTitle) roleTitle.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Privilegios de Sistema';
     if (roleContent) {
       roleContent.innerHTML = `
         <div class="profile-role-item">
           <span>Nivel de Acceso:</span>
-          <strong>Superadministrador</strong>
+          <strong>${u.role === 'SUPERADMIN' ? 'Master Developer / Superadmin' : 'Personal Administrativo'}</strong>
         </div>
         <div class="profile-role-item">
           <span>Control Criptográfico:</span>
@@ -618,6 +657,16 @@ async function loadUserProfile() {
   if (inpEmail) inpEmail.value = u.email || '';
   const inpPhone = document.getElementById('inputProfilePhone');
   if (inpPhone) inpPhone.value = u.phone || '';
+
+  // 4. Danger Section Visibility (Strictly hide for SuperAdmin / Master Dev accounts)
+  const dangerSection = document.getElementById('profileDangerSection');
+  if (dangerSection) {
+    if (u.role === 'SUPERADMIN') {
+      dangerSection.classList.add('hidden');
+    } else {
+      dangerSection.classList.remove('hidden');
+    }
+  }
 }
 
 async function handleProfileUpdateSubmit(e) {
@@ -730,14 +779,14 @@ async function handleDeleteAccountSubmit(e) {
   }
 
   if (!password) {
-    showToast('Debes ingresar tu contraseña para confirmar la eliminación.', 'warning');
+    showToast('Debes ingresar tu contraseña para confirmar la desactivación.', 'warning');
     return;
   }
 
   const btnConfirm = document.getElementById('btnConfirmDelete');
   if (btnConfirm) {
     btnConfirm.disabled = true;
-    btnConfirm.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Eliminando tu cuenta...';
+    btnConfirm.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Desactivando tu cuenta...';
   }
 
   try {
@@ -748,17 +797,17 @@ async function handleDeleteAccountSubmit(e) {
 
     closeDeleteAccountModal();
     sfx.playSuccess();
-    showToast(res.message || 'Tu cuenta ha sido eliminada definitivamente.', 'info');
+    showToast(res.message || 'Tu cuenta ha sido puesta en Modo Apagado. Podrás reactivarla en cualquier momento iniciando sesión.', 'info');
 
     setTimeout(() => {
       logout();
-    }, 1200);
+    }, 1500);
   } catch (err) {
     sfx.playError();
-    showToast(`Error al eliminar la cuenta: ${err.message}`, 'error');
+    showToast(`Error al desactivar la cuenta: ${err.message}`, 'error');
     if (btnConfirm) {
       btnConfirm.disabled = false;
-      btnConfirm.innerHTML = '<i class="fa-solid fa-trash-can"></i> Sí, Eliminar mi Cuenta';
+      btnConfirm.innerHTML = '<i class="fa-solid fa-power-off"></i> Sí, Desactivar mi Cuenta';
     }
   }
 }
@@ -2089,22 +2138,29 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnSwitchToReg) btnSwitchToReg.addEventListener('click', switchToRegisterTab);
   if (btnSwitchToLog) btnSwitchToLog.addEventListener('click', switchToLoginTab);
 
-  // Role selector toggling student/teacher fields
+  // Role selector toggling student, teacher, and administrative fields
   const regRole = document.getElementById('regRole');
   if (regRole) {
     regRole.addEventListener('change', (e) => {
-      const isStudent = e.target.value === 'STUDENT';
+      const selected = e.target.value;
       const studentFields = document.getElementById('groupStudentFields');
       const teacherFields = document.getElementById('groupTeacherFields');
+      const adminFields = document.getElementById('groupAdminFields');
       const institutionalKey = document.getElementById('groupInstitutionalKey');
-      if (isStudent) {
-        if (studentFields) studentFields.classList.remove('hidden');
-        if (teacherFields) teacherFields.classList.add('hidden');
+      const keyInput = document.getElementById('regInstitutionalKey');
+
+      if (studentFields) studentFields.classList.toggle('hidden', selected !== 'STUDENT');
+      if (teacherFields) teacherFields.classList.toggle('hidden', selected !== 'TEACHER');
+      if (adminFields) adminFields.classList.toggle('hidden', selected !== 'ADMIN');
+
+      if (selected === 'STUDENT') {
         if (institutionalKey) institutionalKey.classList.add('hidden');
-      } else {
-        if (studentFields) studentFields.classList.add('hidden');
-        if (teacherFields) teacherFields.classList.remove('hidden');
+      } else if (selected === 'TEACHER') {
         if (institutionalKey) institutionalKey.classList.remove('hidden');
+        if (keyInput) keyInput.placeholder = 'Clave institucional docente (Ej. NEXUS-DOCENTE-AUTH-2026)';
+      } else if (selected === 'ADMIN') {
+        if (institutionalKey) institutionalKey.classList.remove('hidden');
+        if (keyInput) keyInput.placeholder = 'Clave de seguridad directiva (Ej. NEXUS-ADMIN-MASTER-2026)';
       }
     });
   }

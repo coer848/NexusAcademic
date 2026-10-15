@@ -1,0 +1,71 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4] [cursor=pointer]: NexusAcademic
+      - navigation
+      - generic [ref=e12]:
+        - generic "Hora Oficial del Campus - Sincronizada" [ref=e13]:
+          - generic [ref=e18]:
+            - generic [ref=e19]: 06:17:10 p. m.
+            - generic [ref=e20]: Mié, 14 oct 2026
+        - button "Alternar tema" [ref=e21] [cursor=pointer]
+  - main [ref=e28]:
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - button "Iniciar Sesión" [ref=e33] [cursor=pointer]
+        - button "Crear Cuenta" [ref=e38] [cursor=pointer]
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - heading "Registro Institucional" [level=2] [ref=e94]
+          - paragraph [ref=e95]: Crea tu cuenta de Estudiante o Docente en la base de datos
+        - generic [ref=e96]:
+          - generic [ref=e97]:
+            - generic [ref=e98]:
+              - generic [ref=e99]: Nombre
+              - textbox "Nombre" [ref=e103]:
+                - /placeholder: Ej. Camila
+            - generic [ref=e104]:
+              - generic [ref=e105]: Apellido
+              - textbox "Apellido" [ref=e106]:
+                - /placeholder: Ej. Torres
+          - generic [ref=e107]:
+            - generic [ref=e108]:
+              - generic [ref=e109]: Correo Electrónico
+              - textbox "Correo Electrónico" [ref=e113]:
+                - /placeholder: usuario@nexus.edu
+            - generic [ref=e114]:
+              - generic [ref=e115]: Número Telefónico / Móvil
+              - textbox "Número Telefónico / Móvil" [ref=e118]:
+                - /placeholder: Ej. +57 300 123 4567
+          - generic [ref=e119]:
+            - generic [ref=e120]: Contraseña (mínimo 6 caracteres)
+            - textbox "Contraseña (mínimo 6 caracteres)" [ref=e124]:
+              - /placeholder: ••••••••
+          - generic [ref=e125]:
+            - generic [ref=e126]:
+              - generic [ref=e127]: Rol
+              - combobox "Rol" [ref=e133]:
+                - option "Estudiante (Alumno)" [selected]
+                - option "Docente (Profesor)"
+                - option "Personal Administrativo / Directivo"
+            - generic [ref=e134]:
+              - generic [ref=e135]: Código / Matrícula
+              - textbox "Código / Matrícula" [ref=e139]:
+                - /placeholder: Ej. EST-2026-99
+          - generic [ref=e140]:
+            - generic [ref=e141]: Carrera Universitaria
+            - textbox "Carrera Universitaria" [ref=e145]:
+              - /placeholder: Ej. Ingeniería de Sistemas
+              - text: Ingeniería de Software
+          - button "Registrar Cuenta y Acceder" [ref=e146] [cursor=pointer]
+        - generic [ref=e151]:
+          - generic [ref=e152]: ¿Ya tienes una cuenta registrada?
+          - button "Iniciar Sesión" [ref=e153] [cursor=pointer]
+    - text: +  +          +             
+  - text:                   
+  - contentinfo [ref=e77]:
+    - generic [ref=e78]:
+      - generic [ref=e79]:
+        - generic [ref=e80]: 
+        - generic [ref=e81]: NexusAcademic Enterprise • Sistema Integral de Gestión Académica & Asistencia QR
+      - paragraph [ref=e82]: © 2026 NexusAcademic Platform. Diseñado con Vanilla CSS Glassmorphism, SQLite Transaccional & Node.js ES Modules.

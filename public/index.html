@@ -305,6 +305,7 @@
                   <select id="regRole" class="form-select">
                     <option value="STUDENT">Estudiante (Alumno)</option>
                     <option value="TEACHER">Docente (Profesor)</option>
+                    <option value="ADMIN">Personal Administrativo / Directivo</option>
                   </select>
                 </div>
                 <div class="form-group">
@@ -346,6 +347,20 @@
                 <input type="text" id="regDepartment" placeholder="Ej. Ciencias Computacionales">
               </div>
 
+              <div class="form-group hidden" id="groupAdminFields">
+                <label for="regAdminPosition">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                  Cargo / Dependencia Administrativa
+                </label>
+                <input type="text" id="regAdminPosition" placeholder="Ej. Rectoría, Coordinación Académica, Registro y Control">
+              </div>
+
               <div class="form-group hidden" id="groupInstitutionalKey">
                 <label for="regInstitutionalKey">
                   <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -358,7 +373,7 @@
                 <input type="password" id="regInstitutionalKey" placeholder="Código de validación docente o directivo">
                 <small class="field-hint" style="color:var(--text-muted); font-size:0.75rem; margin-top:0.35rem; display:block;">
                   <svg class="svg-icon" style="width:13px; height:13px; vertical-align:middle; display:inline;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  Obligatorio para docentes. Previene la suplantación de cargos y el acceso no autorizado.
+                  Obligatorio para docentes y directivos. Previene la suplantación de cargos y el acceso no autorizado.
                 </small>
               </div>
 
@@ -1501,32 +1516,31 @@
             </form>
           </div>
 
-          <!-- Card 3: Zona de Peligro - Eliminación Definitiva de Cuenta -->
-          <div class="glass-card profile-danger-card">
+          <!-- Card 3: Zona de Seguridad - Desactivación de Cuenta (Modo Apagado) -->
+          <div class="glass-card profile-danger-card" id="profileDangerSection">
             <div class="danger-header">
               <div class="danger-icon">
                 <svg class="svg-icon" style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                  <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                  <line x1="12" y1="2" x2="12" y2="12" />
                 </svg>
               </div>
               <div>
-                <h3 class="danger-title">Zona de Peligro — Eliminar Cuenta Definitivamente</h3>
+                <h3 class="danger-title">Zona de Cuenta — Desactivar Cuenta (Modo Apagado)</h3>
                 <p class="danger-desc">
-                  Al eliminar tu cuenta, todos tus datos personales, accesos, registros de perfil y credenciales se
-                  borrarán permanentemente del sistema. Esta acción es <strong>definitiva e irreversible</strong>.
+                  Al desactivar tu cuenta, esta pasará al modo de reposo ('apagado') y tus sesiones activas se cerrarán. Tu historial académico, notas y asistencias permanecerán resguardados. Podrás reactivar tu cuenta en cualquier momento volviendo a iniciar sesión con tu correo y contraseña.
                 </p>
               </div>
             </div>
             <div class="danger-actions">
-              <button type="button" class="btn btn-danger" id="btnOpenDeleteAccountModal">
+              <button type="button" class="btn btn-secondary" id="btnOpenDeleteAccountModal" style="border-color: rgba(239, 68, 68, 0.4); color: #f87171;">
                 <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                  <line x1="12" y1="2" x2="12" y2="12" />
                 </svg>
-                <span>Eliminar mi Cuenta Definitivamente</span>
+                <span>Desactivar mi Cuenta (Modo Apagado)</span>
               </button>
             </div>
           </div>
@@ -2227,14 +2241,18 @@
             style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; font-size: 0.9rem; color: var(--text-muted);">
             <input type="checkbox" id="checkConfirmDelete" required
               style="margin-top: 0.2rem; cursor: pointer; width: 1.1rem; height: 1.1rem;">
-            <span>Entiendo que esta acción borrará permanentemente mi usuario y no se podrá deshacer.</span>
+            <span>Entiendo que mi cuenta se colocará en modo apagado (suspendida) y que podré reactivarla al volver a iniciar sesión con mi contraseña.</span>
           </label>
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn btn-glass" id="btnCancelDeleteAccount">Cancelar y Conservar Cuenta</button>
-          <button type="submit" class="btn btn-danger" id="btnConfirmDelete">
-            <i class="fa-solid fa-trash-can"></i> Sí, Eliminar mi Cuenta
+          <button type="button" class="btn btn-glass" id="btnCancelDeleteAccount">Cancelar</button>
+          <button type="submit" class="btn btn-warning" id="btnConfirmDelete" style="background:#d97706; color:#fff; border:none;">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+              <line x1="12" y1="2" x2="12" y2="12" />
+            </svg>
+            Confirmar Desactivación (Modo Apagado)
           </button>
         </div>
       </form>
