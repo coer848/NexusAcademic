@@ -12,11 +12,11 @@ use NexusAcademic\Core\Request;
 use NexusAcademic\Core\Response;
 use NexusAcademic\Models\UserModel;
 use NexusAcademic\Models\AuditModel;
-use NexusAcademic\Services\CryptoService;
+use CryptoService;
 
 require_once __DIR__ . '/../Models/UserModel.php';
 require_once __DIR__ . '/../Models/AuditModel.php';
-require_once __DIR__ . '/../Services/CryptoService.php';
+require_once __DIR__ . '/../services/CryptoService.php';
 
 class DevController {
 
@@ -77,14 +77,14 @@ class DevController {
                 Response::forbidden('Acceso denegado: Solo el Administrador General o Programador puede crear cuentas institucionales directamente.');
             }
 
-            $email = trim($body['email'] ?? '');
-            $password = trim($body['password'] ?? '');
-            $firstName = trim($body['first_name'] ?? '');
-            $lastName = trim($body['last_name'] ?? '');
-            $phone = trim($body['phone'] ?? '');
-            $role = strtoupper(trim($body['role'] ?? ''));
-            $customCode = trim($body['code'] ?? '');
-            $departmentOrCareer = trim($body['department_or_career'] ?? '');
+            $email = trim((string)($body['email'] ?? ''));
+            $password = trim((string)($body['password'] ?? ''));
+            $firstName = trim((string)($body['first_name'] ?? $body['firstName'] ?? ''));
+            $lastName = trim((string)($body['last_name'] ?? $body['lastName'] ?? ''));
+            $phone = trim((string)($body['phone'] ?? ''));
+            $role = strtoupper(trim((string)($body['role'] ?? '')));
+            $customCode = trim((string)($body['code'] ?? ''));
+            $departmentOrCareer = trim((string)($body['department_or_career'] ?? $body['departmentOrCareer'] ?? ''));
 
             if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 throw new Exception('El correo electrónico es inválido o está vacío.', 400);

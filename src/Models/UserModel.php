@@ -103,6 +103,36 @@ class UserModel {
         return $stmt->execute([$firstName, $lastName, $phone, $userId]);
     }
 
+    public static function updateTeacherProfileByUserId(int $userId, ?string $department, ?string $specialty): bool {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('
+            UPDATE teachers
+            SET department = COALESCE(?, department),
+                specialty = COALESCE(?, specialty)
+            WHERE user_id = ?
+        ');
+        return $stmt->execute([
+            !empty($department) ? $department : null,
+            $specialty,
+            $userId
+        ]);
+    }
+
+    public static function updateStudentProfileByUserId(int $userId, ?string $career, ?int $semester): bool {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('
+            UPDATE students
+            SET career = COALESCE(?, career),
+                semester = COALESCE(?, semester)
+            WHERE user_id = ?
+        ');
+        return $stmt->execute([
+            !empty($career) ? $career : null,
+            $semester !== null && $semester > 0 ? $semester : null,
+            $userId
+        ]);
+    }
+
     public static function deleteAccount(int $userId, string $role): bool {
         return Database::transaction(function (PDO $db) use ($userId, $role) {
             if ($role === 'TEACHER') {
@@ -258,7 +288,7 @@ class UserModel {
         } catch (\Throwable $e) {}
 
         $user = self::findByEmail($devEmail);
-        require_once dirname(__DIR__) . '/Services/CryptoService.php';
+        require_once dirname(__DIR__) . '/services/CryptoService.php';
 
         if (!$user) {
             $hash = \CryptoService::hashPassword($devPass);

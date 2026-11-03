@@ -36,16 +36,28 @@ class AcademicModel {
         return $stmt->execute([
             $data['name'] ?? null,
             $data['code'] ?? null,
-            $data['grading_scale'] ?? null,
-            isset($data['min_grade']) ? (float)$data['min_grade'] : null,
-            isset($data['max_grade']) ? (float)$data['max_grade'] : null,
-            isset($data['min_passing_grade']) ? (float)$data['min_passing_grade'] : null
+            $data['grading_scale'] ?? ($data['gradingScale'] ?? null),
+            isset($data['min_grade']) ? (float)$data['min_grade'] : (isset($data['minGrade']) ? (float)$data['minGrade'] : null),
+            isset($data['max_grade']) ? (float)$data['max_grade'] : (isset($data['maxGrade']) ? (float)$data['maxGrade'] : null),
+            isset($data['min_passing_grade']) ? (float)$data['min_passing_grade'] : (isset($data['minPassingGrade']) ? (float)$data['minPassingGrade'] : null)
         ]);
     }
 
     public static function getPeriods(): array {
         $pdo = Database::getConnection();
-        $stmt = $pdo->query('SELECT * FROM academic_periods ORDER BY id DESC');
+        $stmt = $pdo->query('
+            SELECT 
+                id,
+                institution_id,
+                name,
+                SUBSTRING_INDEX(name, " ", 1) AS code,
+                start_date,
+                end_date,
+                is_active,
+                created_at
+            FROM academic_periods
+            ORDER BY id DESC
+        ');
         return $stmt->fetchAll();
     }
 
@@ -81,11 +93,14 @@ class AcademicModel {
         $sql = '
             SELECT 
                 cg.*,
+                cg.schedule AS schedule_json,
                 s.name AS subject_name, s.code AS subject_code, s.credits,
                 ap.name AS period_name,
                 u.first_name AS teacher_first_name, u.last_name AS teacher_last_name, u.email AS teacher_email,
                 t.teacher_code,
-                (SELECT COUNT(*) FROM enrollments WHERE group_id = cg.id AND status = "ACTIVE") AS enrolled_count
+                (SELECT COUNT(*) FROM enrollments WHERE group_id = cg.id AND status = "ACTIVE") AS enrolled_count,
+                (SELECT COUNT(*) FROM enrollments WHERE group_id = cg.id AND status = "ACTIVE") AS enrolled_students_count,
+                (SELECT COUNT(*) FROM class_sessions WHERE group_id = cg.id) AS total_sessions_count
             FROM course_groups cg
             JOIN subjects s ON cg.subject_id = s.id
             JOIN academic_periods ap ON cg.period_id = ap.id
@@ -95,12 +110,12 @@ class AcademicModel {
 
         $params = [];
         if ($user) {
-            if ($user['role'] === 'TEACHER') {
+            if (($user['role'] ?? '') === 'TEACHER') {
                 $sql .= ' WHERE cg.teacher_id = ?';
-                $params[] = (int)$user['teacherId'];
-            } elseif ($user['role'] === 'STUDENT') {
+                $params[] = (int)($user['teacherId'] ?? 0);
+            } elseif (($user['role'] ?? '') === 'STUDENT') {
                 $sql .= ' JOIN enrollments e ON e.group_id = cg.id WHERE e.student_id = ? AND e.status = "ACTIVE"';
-                $params[] = (int)$user['studentId'];
+                $params[] = (int)($user['studentId'] ?? 0);
             }
         }
 
@@ -115,10 +130,14 @@ class AcademicModel {
         $stmt = $pdo->prepare('
             SELECT 
                 cg.*,
+                cg.schedule AS schedule_json,
                 s.name AS subject_name, s.code AS subject_code, s.credits,
                 ap.name AS period_name,
                 u.first_name AS teacher_first_name, u.last_name AS teacher_last_name, u.email AS teacher_email,
-                t.teacher_code
+                t.teacher_code,
+                (SELECT COUNT(*) FROM enrollments WHERE group_id = cg.id AND status = "ACTIVE") AS enrolled_count,
+                (SELECT COUNT(*) FROM enrollments WHERE group_id = cg.id AND status = "ACTIVE") AS enrolled_students_count,
+                (SELECT COUNT(*) FROM class_sessions WHERE group_id = cg.id) AS total_sessions_count
             FROM course_groups cg
             JOIN subjects s ON cg.subject_id = s.id
             JOIN academic_periods ap ON cg.period_id = ap.id
@@ -134,46 +153,62 @@ class AcademicModel {
 
     public static function createGroup(array $data): int {
         $pdo = Database::getConnection();
+
+        $subjectId = (int)($data['subject_id'] ?? $data['subjectId'] ?? 0);
+        $periodId  = (int)($data['period_id'] ?? $data['periodId'] ?? 0);
+        $teacherId = (int)($data['teacher_id'] ?? $data['teacherId'] ?? 0);
+        $groupCode = trim((string)($data['group_code'] ?? $data['groupCode'] ?? ''));
+        $schedule  = trim((string)($data['schedule'] ?? $data['schedule_json'] ?? 'Horario por definir'));
+        $classroom = trim((string)($data['classroom'] ?? 'Aula por asignar'));
+        $geoLat    = isset($data['geo_lat']) ? (float)$data['geo_lat'] : (isset($data['geoLat']) ? (float)$data['geoLat'] : 4.6097000);
+        $geoLng    = isset($data['geo_lng']) ? (float)$data['geo_lng'] : (isset($data['geoLng']) ? (float)$data['geoLng'] : -74.0817000);
+        $geoRadius = isset($data['geo_radius_meters']) ? (float)$data['geo_radius_meters'] : (isset($data['geoRadiusMeters']) ? (float)$data['geoRadiusMeters'] : 100.00);
+
         $stmt = $pdo->prepare('
-            INSERT INTO course_groups (subject_id, period_id, teacher_id, group_code, schedule_json, classroom, max_students, geo_lat, geo_lng, geo_radius_meters, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "ACTIVE")
+            INSERT INTO course_groups (subject_id, period_id, teacher_id, group_code, schedule, classroom, geo_lat, geo_lng, geo_radius_meters)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
-            $data['subject_id'],
-            $data['period_id'],
-            $data['teacher_id'] ?: null,
-            $data['group_code'],
-            $data['schedule_json'] ?: null,
-            $data['classroom'] ?: null,
-            $data['max_students'] ?? 40,
-            $data['geo_lat'] ?? null,
-            $data['geo_lng'] ?? null,
-            $data['geo_radius_meters'] ?? 100
+            $subjectId,
+            $periodId,
+            $teacherId,
+            $groupCode,
+            $schedule,
+            $classroom,
+            $geoLat,
+            $geoLng,
+            $geoRadius
         ]);
         return (int)$pdo->lastInsertId();
     }
 
     public static function updateGroup(int $id, array $data): bool {
         $pdo = Database::getConnection();
+
+        $teacherId = isset($data['teacher_id']) ? (int)$data['teacher_id'] : (isset($data['teacherId']) ? (int)$data['teacherId'] : null);
+        $classroom = $data['classroom'] ?? null;
+        $schedule  = $data['schedule'] ?? ($data['schedule_json'] ?? null);
+        $geoLat    = isset($data['geo_lat']) ? (float)$data['geo_lat'] : (isset($data['geoLat']) ? (float)$data['geoLat'] : null);
+        $geoLng    = isset($data['geo_lng']) ? (float)$data['geo_lng'] : (isset($data['geoLng']) ? (float)$data['geoLng'] : null);
+        $geoRadius = isset($data['geo_radius_meters']) ? (float)$data['geo_radius_meters'] : (isset($data['geoRadiusMeters']) ? (float)$data['geoRadiusMeters'] : null);
+
         $stmt = $pdo->prepare('
             UPDATE course_groups 
             SET teacher_id = COALESCE(?, teacher_id),
                 classroom = COALESCE(?, classroom),
-                schedule_json = COALESCE(?, schedule_json),
-                max_students = COALESCE(?, max_students),
+                schedule = COALESCE(?, schedule),
                 geo_lat = COALESCE(?, geo_lat),
                 geo_lng = COALESCE(?, geo_lng),
                 geo_radius_meters = COALESCE(?, geo_radius_meters)
             WHERE id = ?
         ');
         return $stmt->execute([
-            $data['teacher_id'] ?? null,
-            $data['classroom'] ?? null,
-            $data['schedule_json'] ?? null,
-            $data['max_students'] ?? null,
-            $data['geo_lat'] ?? null,
-            $data['geo_lng'] ?? null,
-            $data['geo_radius_meters'] ?? null,
+            $teacherId ?: null,
+            $classroom,
+            $schedule,
+            $geoLat,
+            $geoLng,
+            $geoRadius,
             $id
         ]);
     }
@@ -188,11 +223,21 @@ class AcademicModel {
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare('
             SELECT 
-                cg.id, cg.group_code, cg.classroom, cg.schedule_json, cg.max_students,
-                s.id AS subject_id, s.name AS subject_name, s.code AS subject_code, s.credits,
+                cg.id,
+                cg.group_code,
+                cg.classroom,
+                cg.schedule,
+                cg.schedule AS schedule_json,
+                30 AS max_students,
+                s.id AS subject_id,
+                s.name AS subject_name,
+                s.code AS subject_code,
+                s.credits,
                 ap.name AS period_name,
-                u.first_name AS teacher_first_name, u.last_name AS teacher_last_name,
+                u.first_name AS teacher_first_name,
+                u.last_name AS teacher_last_name,
                 (SELECT COUNT(*) FROM enrollments WHERE group_id = cg.id AND status = "ACTIVE") AS enrolled_count,
+                (SELECT COUNT(*) FROM enrollments WHERE group_id = cg.id AND status = "ACTIVE") AS enrolled_students_count,
                 CASE WHEN EXISTS(
                     SELECT 1 FROM enrollments WHERE group_id = cg.id AND student_id = ? AND status = "ACTIVE"
                 ) THEN 1 ELSE 0 END AS is_enrolled
@@ -201,7 +246,7 @@ class AcademicModel {
             JOIN academic_periods ap ON cg.period_id = ap.id
             LEFT JOIN teachers t ON cg.teacher_id = t.id
             LEFT JOIN users u ON t.user_id = u.id
-            WHERE cg.status = "ACTIVE" AND ap.is_active = 1
+            WHERE ap.is_active = 1
             ORDER BY s.name ASC, cg.group_code ASC
         ');
         $stmt->execute([$studentId]);
@@ -229,8 +274,18 @@ class AcademicModel {
         $pdo = Database::getConnection();
         $stmt = $pdo->query('
             SELECT 
-                t.id, t.teacher_code, t.department, t.specialty, t.created_at,
-                u.id AS user_id, u.first_name, u.last_name, u.email, u.phone, u.status
+                t.id,
+                t.teacher_code,
+                t.department,
+                t.specialty,
+                u.created_at,
+                u.id AS user_id,
+                u.first_name,
+                u.last_name,
+                u.email,
+                u.phone,
+                u.status,
+                (SELECT COUNT(*) FROM course_groups cg WHERE cg.teacher_id = t.id) AS assigned_groups_count
             FROM teachers t
             JOIN users u ON t.user_id = u.id
             ORDER BY u.last_name ASC, u.first_name ASC
@@ -246,8 +301,11 @@ class AcademicModel {
             if (!$row) return false;
 
             $userId = (int)$row['user_id'];
+            $firstName = $data['first_name'] ?? ($data['firstName'] ?? null);
+            $lastName  = $data['last_name'] ?? ($data['lastName'] ?? null);
+            $phone     = $data['phone'] ?? null;
 
-            if (!empty($data['first_name']) || !empty($data['last_name']) || isset($data['phone'])) {
+            if ($firstName !== null || $lastName !== null || $phone !== null) {
                 $uStmt = $db->prepare('
                     UPDATE users 
                     SET first_name = COALESCE(?, first_name),
@@ -256,9 +314,9 @@ class AcademicModel {
                     WHERE id = ?
                 ');
                 $uStmt->execute([
-                    $data['first_name'] ?? null,
-                    $data['last_name'] ?? null,
-                    $data['phone'] ?? null,
+                    $firstName,
+                    $lastName,
+                    $phone,
                     $userId
                 ]);
             }
@@ -281,8 +339,18 @@ class AcademicModel {
         $pdo = Database::getConnection();
         $stmt = $pdo->query('
             SELECT 
-                st.id, st.student_code, st.career, st.semester, st.created_at,
-                u.id AS user_id, u.first_name, u.last_name, u.email, u.phone, u.status
+                st.id,
+                st.student_code,
+                st.career,
+                st.semester,
+                u.created_at,
+                u.id AS user_id,
+                u.first_name,
+                u.last_name,
+                u.email,
+                u.phone,
+                u.status,
+                (SELECT COUNT(*) FROM enrollments e WHERE e.student_id = st.id AND e.status = "ACTIVE") AS enrolled_courses_count
             FROM students st
             JOIN users u ON st.user_id = u.id
             ORDER BY u.last_name ASC, u.first_name ASC

@@ -13,14 +13,15 @@ $messageType = 'info';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'seed') {
     try {
         if (defined('APP_ENV') && APP_ENV === 'production') {
+            $existingUsers = 0;
             try {
                 $pdoCheck = Database::getConnection();
                 $existingUsers = (int)$pdoCheck->query("SELECT COUNT(*) FROM users")->fetchColumn();
-                if ($existingUsers > 0 && empty($_POST['confirm_destructive_reseed'])) {
-                    throw new Exception("Bloqueo de Seguridad OWASP: No se permite reiniciar la base de datos en producción cuando ya existen usuarios activos.");
-                }
             } catch (Throwable $eDb) {
-                // If tables don't exist yet, proceed with setup
+                $existingUsers = 0;
+            }
+            if ($existingUsers > 0 && empty($_POST['confirm_destructive_reseed'])) {
+                throw new Exception("Bloqueo de Seguridad OWASP: No se permite reiniciar la base de datos en producción cuando ya existen usuarios activos.");
             }
         }
 

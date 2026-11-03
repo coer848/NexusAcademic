@@ -19,6 +19,7 @@ class AttendanceModel {
         $stmt = $pdo->prepare('
             SELECT 
                 cs.*,
+                TIMESTAMPDIFF(SECOND, cs.started_at, CURRENT_TIMESTAMP) AS elapsed_seconds,
                 cg.group_code, cg.classroom,
                 s.name AS subject_name,
                 u.first_name AS teacher_first_name, u.last_name AS teacher_last_name
@@ -31,6 +32,30 @@ class AttendanceModel {
             LIMIT 1
         ');
         $stmt->execute([$sessionId]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public static function getLatestSessionForStudent(int $studentId): ?array {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('
+            SELECT 
+                cs.*,
+                TIMESTAMPDIFF(SECOND, cs.started_at, CURRENT_TIMESTAMP) AS elapsed_seconds,
+                cg.group_code, cg.classroom,
+                s.name AS subject_name,
+                u.first_name AS teacher_first_name, u.last_name AS teacher_last_name
+            FROM class_sessions cs
+            JOIN course_groups cg ON cs.group_id = cg.id
+            JOIN enrollments e ON e.group_id = cg.id
+            JOIN subjects s ON cg.subject_id = s.id
+            JOIN teachers t ON cs.teacher_id = t.id
+            JOIN users u ON t.user_id = u.id
+            WHERE e.student_id = ? AND e.status = "ACTIVE"
+            ORDER BY (cs.status = "ACTIVE") DESC, cs.started_at DESC, cs.id DESC
+            LIMIT 1
+        ');
+        $stmt->execute([$studentId]);
         $row = $stmt->fetch();
         return $row ?: null;
     }
@@ -80,21 +105,50 @@ class AttendanceModel {
         return (bool)$stmt->fetch();
     }
 
+    public static function isNonceUsed(string $nonce): bool {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('SELECT id FROM attendance_tokens WHERE nonce = ? LIMIT 1');
+        $stmt->execute([$nonce]);
+        return (bool)$stmt->fetch();
+    }
+
+    public static function recordUsedNonce(int $sessionId, string $nonce, int $studentId): void {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('
+            INSERT IGNORE INTO attendance_tokens (session_id, nonce, student_id)
+            VALUES (?, ?, ?)
+        ');
+        $stmt->execute([$sessionId, $nonce, $studentId]);
+    }
+
     public static function recordAttendance(array $data): int {
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare('
-            INSERT INTO attendances (session_id, student_id, scanned_at, verification_method, device_fingerprint, ip_address, geo_lat, geo_lng, is_flagged, flag_reason)
-            VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO attendances (
+                session_id,
+                student_id,
+                status,
+                registered_at,
+                verification_method,
+                ip_address,
+                user_agent,
+                device_info,
+                distance_meters,
+                is_flagged,
+                flag_reason
+            )
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
             $data['session_id'],
             $data['student_id'],
-            $data['verification_method'] ?? 'DYNAMIC_QR',
-            $data['device_fingerprint'] ?? null,
+            $data['status'] ?? 'PRESENT',
+            $data['verification_method'] ?? 'QR_DYNAMIC_HMAC',
             $data['ip_address'] ?? null,
-            $data['geo_lat'] ?? null,
-            $data['geo_lng'] ?? null,
-            $data['is_flagged'] ? 1 : 0,
+            $data['user_agent'] ?? ($_SERVER['HTTP_USER_AGENT'] ?? null),
+            $data['device_info'] ?? ($data['device_fingerprint'] ?? null),
+            $data['distance_meters'] ?? null,
+            !empty($data['is_flagged']) ? 1 : 0,
             $data['flag_reason'] ?? null
         ]);
         return (int)$pdo->lastInsertId();
@@ -105,16 +159,25 @@ class AttendanceModel {
         $stmt = $pdo->prepare('
             SELECT 
                 a.*,
+                a.registered_at AS scanned_at,
                 st.student_code, st.career,
                 u.first_name, u.last_name, u.email
             FROM attendances a
             JOIN students st ON a.student_id = st.id
             JOIN users u ON st.user_id = u.id
             WHERE a.session_id = ?
-            ORDER BY a.scanned_at ASC
+            ORDER BY a.registered_at DESC, a.id DESC
         ');
         $stmt->execute([$sessionId]);
         return $stmt->fetchAll();
+    }
+
+    public static function getEnrolledCountByGroup(int $groupId): int {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare('SELECT COUNT(*) AS cnt FROM enrollments WHERE group_id = ? AND status = "ACTIVE"');
+        $stmt->execute([$groupId]);
+        $row = $stmt->fetch();
+        return $row ? (int)$row['cnt'] : 0;
     }
 
     public static function getMyAttendanceHistory(int $studentId): array {
@@ -122,7 +185,10 @@ class AttendanceModel {
         $stmt = $pdo->prepare('
             SELECT 
                 a.*,
-                cs.topic, cs.started_at AS session_date,
+                a.registered_at AS scanned_at,
+                cs.topic,
+                cs.started_at,
+                cs.started_at AS session_date,
                 cg.group_code, cg.classroom,
                 s.name AS subject_name, s.code AS subject_code,
                 u.first_name AS teacher_first_name, u.last_name AS teacher_last_name
@@ -133,7 +199,7 @@ class AttendanceModel {
             JOIN teachers t ON cs.teacher_id = t.id
             JOIN users u ON t.user_id = u.id
             WHERE a.student_id = ?
-            ORDER BY a.scanned_at DESC
+            ORDER BY a.registered_at DESC, a.id DESC
         ');
         $stmt->execute([$studentId]);
         return $stmt->fetchAll();

@@ -278,6 +278,10 @@ function showView(viewId) {
   } else if (viewId === 'viewMasterDev') {
     loadMasterDevDashboard();
   }
+
+  if (typeof syncMobileBottomNav === 'function') {
+    syncMobileBottomNav();
+  }
 }
 
 function updateNavBar(role) {
@@ -402,18 +406,19 @@ async function login(email, password) {
     updateNavBar(data.user.role);
 
     if (data.user.role === 'SUPERADMIN') {
-      loadMasterDevDashboard();
       showView('viewMasterDev');
+      await loadMasterDevDashboard();
     } else if (data.user.role === 'ADMIN') {
-      loadAdminDashboard();
       showView('viewAdmin');
+      await loadAdminDashboard();
     } else if (data.user.role === 'TEACHER') {
-      loadTeacherDashboard();
       showView('viewTeacher');
+      await loadTeacherDashboard();
     } else if (data.user.role === 'STUDENT') {
-      loadStudentDashboard();
       showView('viewStudent');
+      await loadStudentDashboard();
     }
+    syncMobileBottomNav();
   } catch (err) {
     sfx.playError();
     showToast(err.message, 'error');
@@ -816,8 +821,25 @@ async function handleDeleteAccountSubmit(e) {
 // ================= ADMIN DASHBOARD CONTROLLER =================
 async function loadAdminDashboard() {
   try {
+    const [
+      metrics,
+      groups,
+      teachers,
+      subjects,
+      students,
+      auditLogs,
+      gradeHistory
+    ] = await Promise.all([
+      apiFetch('/api/audit/metrics'),
+      apiFetch('/api/academic/groups'),
+      apiFetch('/api/academic/teachers'),
+      apiFetch('/api/academic/subjects'),
+      apiFetch('/api/academic/students'),
+      apiFetch('/api/audit/logs?limit=50'),
+      apiFetch('/api/audit/grades-history')
+    ]);
+
     // 1. Metrics
-    const metrics = await apiFetch('/api/audit/metrics');
     document.getElementById('statAdminStudents').textContent = metrics.totalStudents;
     document.getElementById('statAdminTeachers').textContent = metrics.totalTeachers;
     document.getElementById('statAdminAttendances').textContent = metrics.totalAttendances;
@@ -825,7 +847,6 @@ async function loadAdminDashboard() {
     document.getElementById('statAdminGradeChanges').textContent = `${metrics.totalGradeChanges} cambios auditados`;
 
     // 2. Groups Table
-    const groups = await apiFetch('/api/academic/groups');
     const tbodyGroups = document.querySelector('#tableAdminGroups tbody');
     tbodyGroups.innerHTML = groups.map(g => `
       <tr>
@@ -836,7 +857,7 @@ async function loadAdminDashboard() {
         <td><span class="badge-pill">${g.enrolled_students_count} alumnos</span></td>
         <td><span class="badge-pill">${g.total_sessions_count} sesiones</span></td>
         <td>
-          <div style="display:flex; gap:0.4rem;">
+          <div class="action-group-inline">
             <button class="btn btn-sm btn-glass" onclick="openEditGroupModal(${g.id})" title="Editar Asignación / Horario">
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
@@ -849,7 +870,6 @@ async function loadAdminDashboard() {
     `).join('');
 
     // 3. Teachers Table (with Edit profile button)
-    const teachers = await apiFetch('/api/academic/teachers');
     const tbodyTeachers = document.querySelector('#tableAdminTeachers tbody');
     tbodyTeachers.innerHTML = teachers.map(t => `
       <tr>
@@ -868,7 +888,6 @@ async function loadAdminDashboard() {
     `).join('');
 
     // 4. Subjects Table
-    const subjects = await apiFetch('/api/academic/subjects');
     const tbodySubs = document.querySelector('#tableAdminSubjects tbody');
     tbodySubs.innerHTML = subjects.map(s => `
       <tr>
@@ -880,7 +899,6 @@ async function loadAdminDashboard() {
     `).join('');
 
     // 5. Students Table
-    const students = await apiFetch('/api/academic/students');
     const tbodyUsers = document.querySelector('#tableAdminUsers tbody');
     tbodyUsers.innerHTML = students.map(s => `
       <tr>
@@ -894,7 +912,6 @@ async function loadAdminDashboard() {
     `).join('');
 
     // 6. Audit Logs
-    const auditLogs = await apiFetch('/api/audit/logs?limit=50');
     const tbodyAudit = document.querySelector('#tableAdminAudit tbody');
     tbodyAudit.innerHTML = auditLogs.map(l => `
       <tr>
@@ -908,7 +925,6 @@ async function loadAdminDashboard() {
     `).join('');
 
     // 7. Global Grade History
-    const gradeHistory = await apiFetch('/api/audit/grades-history');
     const tbodyHist = document.querySelector('#tableAdminGradeHistory tbody');
     tbodyHist.innerHTML = gradeHistory.map(h => `
       <tr>
@@ -977,7 +993,10 @@ async function populateGroupModalDropdowns() {
   selectTeach.innerHTML = teachers.map(t => `<option value="${t.id}">Prof. ${t.first_name} ${t.last_name} (${t.department || 'Docente'})</option>`).join('');
 
   const selectPer = document.getElementById('selectGroupPeriod');
-  selectPer.innerHTML = periods.map(p => `<option value="${p.id}">${p.name} (${p.code})</option>`).join('');
+  selectPer.innerHTML = periods.map(p => {
+    const label = (p.code && !String(p.name).includes(p.code)) ? `${p.name} (${p.code})` : p.name;
+    return `<option value="${p.id}">${label}</option>`;
+  }).join('');
 }
 
 async function submitGroupForm(e) {
@@ -1505,11 +1524,12 @@ async function loadTeacherGradebookMatrix(groupId) {
   if (!groupId) return;
   try {
     const data = await apiFetch(`/api/grades/group/${groupId}/matrix`);
+    AppState.currentGradeMatrix = data;
     const thead = document.getElementById('theadGradebook');
     const tbody = document.getElementById('tbodyGradebook');
 
-    const evals = data.evaluations;
-    const matrix = data.matrix;
+    const evals = data.evaluations || [];
+    const matrix = data.matrix || data.rows || [];
 
     // Build Table Header
     thead.innerHTML = `
@@ -1779,7 +1799,7 @@ async function loadStudentDashboard() {
               </div>
 
               <div class="eval-details-grid">
-                ${details.length === 0 ? '<div class="empty-state-cell" style="grid-column:1/-1; padding:0.75rem;">Sin evaluaciones creadas por el docente aún.</div>' : details.map(ev => `
+                ${details.length === 0 ? '<div class="empty-state-cell empty-grid-span">Sin evaluaciones creadas por el docente aún.</div>' : details.map(ev => `
                   <div class="eval-item-card">
                     <div>
                       <div class="eval-name">${ev.name}</div>
@@ -1791,7 +1811,7 @@ async function loadStudentDashboard() {
                         ${ev.isGraded ? `${Number(ev.score).toFixed(1)} / ${ev.maxScore}` : 'Pendiente'}
                       </span>
                     </div>
-                    ${ev.feedback ? `<p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.4rem;"><em>"${ev.feedback}"</em></p>` : ''}
+                    ${ev.feedback ? `<p class="eval-feedback-note"><em>"${ev.feedback}"</em></p>` : ''}
                   </div>
                 `).join('')}
               </div>
@@ -1847,7 +1867,7 @@ window.loadAvailableCourses = async function () {
       <div class="glass-card course-enroll-card">
         <div class="course-enroll-header">
           <span class="code-badge">${c.subject_code || 'ASIG'} • Grupo ${c.group_code}</span>
-          <h3 style="margin-top: 0.35rem;">${c.subject_name}</h3>
+          <h3 class="course-enroll-title">${c.subject_name}</h3>
         </div>
         <div class="course-enroll-details">
           <span><i class="fa-solid fa-chalkboard-user"></i> Prof. ${c.teacher_first_name} ${c.teacher_last_name}</span>
@@ -2182,18 +2202,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Toggle password visibility
+  // Toggle password visibility (supports both SVG and FontAwesome icons)
   const btnToggle = document.getElementById('btnTogglePassword');
   if (btnToggle) {
     btnToggle.addEventListener('click', () => {
       const passInput = document.getElementById('inputPassword');
-      const icon = document.querySelector('#btnTogglePassword i');
-      if (passInput.type === 'password') {
-        passInput.type = 'text';
-        icon.className = 'fa-regular fa-eye-slash';
+      if (!passInput) return;
+      const isHidden = passInput.type === 'password';
+      passInput.type = isHidden ? 'text' : 'password';
+      const icon = btnToggle.querySelector('i');
+      if (icon) {
+        icon.className = isHidden ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
       } else {
-        passInput.type = 'password';
-        icon.className = 'fa-regular fa-eye';
+        btnToggle.innerHTML = isHidden
+          ? `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+          : `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
       }
     });
   }
@@ -2242,7 +2265,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const btnNewTeach = document.getElementById('btnModalNewTeacher');
   if (btnNewTeach) btnNewTeach.addEventListener('click', () => {
-    showToast('Para crear docentes nuevos, utilice el formulario de Registro o la API.', 'info');
+    const modal = document.getElementById('modalDevCreateUser');
+    const roleSelect = document.getElementById('devNewRole');
+    if (modal) {
+      if (roleSelect) roleSelect.value = 'TEACHER';
+      modal.classList.remove('hidden');
+      const firstInput = document.getElementById('devNewFirstName');
+      if (firstInput) firstInput.focus();
+    } else {
+      showToast('Use el botón "Crear Usuario Institucional" en la cabecera.', 'info');
+    }
   });
 
   const btnNewSub = document.getElementById('btnModalNewSubject');
@@ -2380,12 +2412,79 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnRefAdm = document.getElementById('btnRefreshAdminData');
   if (btnRefAdm) btnRefAdm.addEventListener('click', loadAdminDashboard);
 
-  // CSV Export
+  // CSV Export (Client-side UTF-8 with BOM for Excel compatibility)
   const btnCsv = document.getElementById('btnExportGradesCSV');
   if (btnCsv) {
-    btnCsv.addEventListener('click', () => {
-      showToast('Exportando matriz de calificaciones...', 'info');
-      window.open(`/api/grades/group/${AppState.selectedGroupId}/matrix`, '_blank');
+    btnCsv.addEventListener('click', async () => {
+      try {
+        if (!AppState.selectedGroupId) {
+          showToast('Seleccione primero un grupo académico para exportar.', 'warning');
+          return;
+        }
+        const matrixData = AppState.currentGradeMatrix || await apiFetch(`/api/grades/group/${AppState.selectedGroupId}/matrix`);
+        const evals = matrixData.evaluations || [];
+        const rows = matrixData.matrix || matrixData.rows || [];
+        const groupInfo = matrixData.group || {};
+
+        if (rows.length === 0) {
+          showToast('No hay calificaciones o estudiantes para exportar en este grupo.', 'warning');
+          return;
+        }
+
+        const escapeCsv = (val) => {
+          const str = val == null ? '' : String(val);
+          return `"${str.replace(/"/g, '""')}"`;
+        };
+
+        const headers = [
+          'Código Estudiante',
+          'Apellidos y Nombres',
+          'Correo Institucional',
+          'Programa / Carrera',
+          ...evals.map(e => `${e.name} (${e.weight}%)`),
+          'Peso Evaluado (%)',
+          'Promedio Ponderado',
+          'Estado'
+        ];
+
+        const csvLines = [headers.map(escapeCsv).join(',')];
+
+        rows.forEach(r => {
+          const st = r.student || {};
+          const evalScores = (r.grades || []).map(g => (g.isGraded && g.score != null ? Number(g.score).toFixed(2) : 'Pendiente'));
+          const avg = r.weightedAverage != null ? Number(r.weightedAverage).toFixed(2) : '0.00';
+          const statusLabel = r.weightedAverage == null ? 'EN CURSO' : (r.isPassing ? 'APROBADO' : 'EN RIESGO');
+
+          const line = [
+            st.student_code || '',
+            `${st.last_name || ''} ${st.first_name || ''}`.trim(),
+            st.email || '',
+            st.career || '',
+            ...evalScores,
+            `${r.totalEvaluatedWeight ?? 0}%`,
+            avg,
+            statusLabel
+          ];
+          csvLines.push(line.map(escapeCsv).join(','));
+        });
+
+        const csvContent = '\uFEFF' + csvLines.join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const safeCode = (groupInfo.group_code || `Grupo_${AppState.selectedGroupId}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+        link.href = url;
+        link.setAttribute('download', `Calificaciones_${safeCode}_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        sfx.playSuccess();
+        showToast('Archivo CSV de calificaciones descargado exitosamente.', 'success');
+      } catch (err) {
+        showToast(`Error al exportar CSV: ${err.message}`, 'error');
+      }
     });
   }
 
@@ -2528,7 +2627,7 @@ async function loadMasterDevDashboard() {
 
       dbTbody.innerHTML = Object.entries(tables).map(([tName, rowCount]) => `
         <tr>
-          <td><code style="color:#c084fc; font-weight:600;">${tName}</code></td>
+          <td><code class="code-accent-purple">${tName}</code></td>
           <td>${tableDescriptions[tName] || 'Entidad relacional'}</td>
           <td><strong>${rowCount}</strong> registros</td>
           <td><span class="status-badge live"><span class="status-dot"></span> Sincronizada</span></td>
@@ -2604,11 +2703,11 @@ function renderDevUsersFiltered() {
       <tr>
         <td><code>#${u.id}</code></td>
         <td>
-          <div style="font-weight:600;">${u.first_name} ${u.last_name}</div>
-          <small style="color:var(--text-muted);">${u.email}</small>
+          <div class="cell-user-title">${u.first_name} ${u.last_name}</div>
+          <small class="cell-user-sub">${u.email}</small>
         </td>
         <td>
-          ${u.phone ? `<span><i class="fa-solid fa-phone" style="font-size:0.75rem; color:var(--text-muted);"></i> ${u.phone}</span>` : '<span style="color:var(--text-muted);">Sin teléfono</span>'}
+          ${u.phone ? `<span><i class="fa-solid fa-phone cell-icon-muted"></i> ${u.phone}</span>` : '<span class="cell-user-sub">Sin teléfono</span>'}
         </td>
         <td>
           <span class="badge-role ${roleBadgeClass}">${u.role}</span>
@@ -2621,7 +2720,7 @@ function renderDevUsersFiltered() {
         </td>
         <td><small>${u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</small></td>
         <td>
-          <div style="display:flex; gap:0.35rem; align-items:center;">
+          <div class="action-group-inline">
             ${!isMaster ? `
               <button class="btn-dev-action ${isActive ? 'suspend' : 'activate'}" onclick="toggleDevUserStatus(${u.id}, '${isActive ? 'INACTIVE' : 'ACTIVE'}')" title="${isActive ? 'Suspender acceso' : 'Reactivar acceso'}">
                 <i class="fa-solid ${isActive ? 'fa-user-slash' : 'fa-user-check'}"></i>
@@ -2634,7 +2733,7 @@ function renderDevUsersFiltered() {
                 <i class="fa-solid fa-trash-can"></i>
               </button>
             ` : `
-              <span class="badge-role superadmin" style="font-size:0.7rem;"><i class="fa-solid fa-lock"></i> Master Dev</span>
+              <span class="badge-role superadmin badge-role-compact"><i class="fa-solid fa-lock"></i> Master Dev</span>
             `}
           </div>
         </td>
@@ -2761,8 +2860,12 @@ async function handleDevCreateUserSubmit(e) {
     showToast(res.message || 'Usuario institucional dado de alta correctamente.', 'success');
     document.getElementById('modalDevCreateUser').classList.add('hidden');
     document.getElementById('formDevCreateUser').reset();
-    await loadDevUsersTable();
-    await loadMasterDevDashboard();
+    if (AppState.user && AppState.user.role === 'ADMIN') {
+      await loadAdminDashboard();
+    } else {
+      await loadDevUsersTable();
+      await loadMasterDevDashboard();
+    }
   } catch (err) {
     sfx.playError();
     showToast(err.message, 'error');
@@ -2805,4 +2908,159 @@ function applyTheme(theme) {
 
 // Immediate Theme Execution on Script Parse
 initThemeSystem();
+
+// ================= UI/UX PRO MAX: RESPONSIVE TABLES, QUICK SEARCH & MOBILE BOTTOM NAV =================
+function applyResponsiveDataLabels(table) {
+  if (!table) return;
+  const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.replace(/\s+/g, ' ').trim());
+  if (!headers.length) return;
+  table.querySelectorAll('tbody tr').forEach(tr => {
+    const cells = tr.querySelectorAll('td');
+    if (cells.length === 1 && cells[0].hasAttribute('colspan')) return;
+    cells.forEach((td, idx) => {
+      if (headers[idx] && !td.getAttribute('data-label')) {
+        td.setAttribute('data-label', headers[idx]);
+      }
+    });
+  });
+}
+
+function initResponsiveTablesObserver() {
+  const tables = document.querySelectorAll('.academic-table');
+  tables.forEach(table => {
+    applyResponsiveDataLabels(table);
+    const tbody = table.querySelector('tbody');
+    if (tbody && !tbody.dataset.responsiveObserved) {
+      tbody.dataset.responsiveObserved = 'true';
+      const observer = new MutationObserver(() => applyResponsiveDataLabels(table));
+      observer.observe(tbody, { childList: true, subtree: true });
+    }
+  });
+}
+
+function initInstantTableFilters() {
+  const filterTargets = [
+    { tableId: 'tableAdminGroups', placeholder: 'Filtrar grupos, asignatura o docente...' },
+    { tableId: 'tableAdminTeachers', placeholder: 'Filtrar docentes por nombre o área...' },
+    { tableId: 'tableAdminStudents', placeholder: 'Filtrar estudiantes o carrera...' },
+    { tableId: 'tableAdminAudit', placeholder: 'Filtrar eventos de auditoría...' },
+    { tableId: 'tableGradebook', placeholder: 'Filtrar estudiante en matriz...' }
+  ];
+
+  filterTargets.forEach(({ tableId, placeholder }) => {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const panel = table.closest('.tab-panel');
+    if (!panel) return;
+    const headerActions = panel.querySelector('.panel-header-actions');
+    if (!headerActions || headerActions.querySelector(`.quick-table-search[data-target="${tableId}"]`)) return;
+
+    const searchWrapper = document.createElement('div');
+    searchWrapper.className = 'quick-search-wrapper';
+    const input = document.createElement('input');
+    input.type = 'search';
+    input.className = 'form-input-sm quick-table-search';
+    input.dataset.target = tableId;
+    input.placeholder = placeholder;
+    input.setAttribute('aria-label', placeholder);
+
+    input.addEventListener('input', () => {
+      const q = input.value.toLowerCase().trim();
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        if (row.querySelector('.empty-state-cell')) return;
+        const text = row.textContent.toLowerCase();
+        row.classList.toggle('hidden', q.length > 0 && !text.includes(q));
+      });
+    });
+
+    searchWrapper.appendChild(input);
+    const actionBtns = headerActions.querySelector('.action-buttons-group') || headerActions;
+    actionBtns.prepend(searchWrapper);
+  });
+}
+
+function syncMobileBottomNav() {
+  const bottomNav = document.getElementById('mobileBottomNav');
+  if (!bottomNav) return;
+
+  const loginEl = document.getElementById('viewLogin');
+  const isAuthVisible = loginEl ? !loginEl.classList.contains('hidden') : false;
+  if (!AppState.user || isAuthVisible) {
+    bottomNav.classList.add('hidden');
+    bottomNav.innerHTML = '';
+    return;
+  }
+
+  let activeSectionId = 'viewAdmin';
+  if (AppState.user.role === 'SUPERADMIN') activeSectionId = 'viewMasterDev';
+  else if (AppState.user.role === 'TEACHER') activeSectionId = 'viewTeacher';
+  else if (AppState.user.role === 'STUDENT') activeSectionId = 'viewStudent';
+
+  const section = document.getElementById(activeSectionId);
+  if (!section) return;
+
+  const tabBtns = Array.from(section.querySelectorAll('.tabs-nav-bar .tab-btn, .admin-tabs-nav .tab-btn'));
+  if (!tabBtns.length) return;
+
+  bottomNav.classList.remove('hidden');
+  bottomNav.innerHTML = '';
+
+  tabBtns.slice(0, 4).forEach(sourceBtn => {
+    const labelText = (sourceBtn.querySelector('span')?.textContent || sourceBtn.textContent || '').trim().split(' ')[0];
+    const iconClone = sourceBtn.querySelector('svg, i')?.cloneNode(true);
+    const mBtn = document.createElement('button');
+    mBtn.type = 'button';
+    mBtn.className = `mobile-bottom-btn ${sourceBtn.classList.contains('active') && !section.classList.contains('hidden') ? 'active' : ''}`;
+    if (iconClone) mBtn.appendChild(iconClone);
+    const span = document.createElement('span');
+    span.textContent = labelText;
+    mBtn.appendChild(span);
+
+    mBtn.addEventListener('click', () => {
+      if (section.classList.contains('hidden')) {
+        showView(activeSectionId);
+      }
+      sourceBtn.click();
+      syncMobileBottomNav();
+    });
+    bottomNav.appendChild(mBtn);
+  });
+
+  // Add Profile shortcut button on mobile bottom bar
+  const profileView = document.getElementById('viewProfile');
+  const isProfileActive = profileView && !profileView.classList.contains('hidden');
+  const profBtn = document.createElement('button');
+  profBtn.type = 'button';
+  profBtn.className = `mobile-bottom-btn ${isProfileActive ? 'active' : ''}`;
+  profBtn.innerHTML = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span>`;
+  profBtn.addEventListener('click', () => {
+    if (typeof window.openUserProfileView === 'function') {
+      window.openUserProfileView();
+    } else {
+      showView('viewProfile');
+    }
+    syncMobileBottomNav();
+  });
+  bottomNav.appendChild(profBtn);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initResponsiveTablesObserver();
+  initInstantTableFilters();
+  setTimeout(syncMobileBottomNav, 120);
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.tab-btn') || e.target.closest('.nav-btn') || e.target.closest('#btnLogout')) {
+      setTimeout(syncMobileBottomNav, 60);
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
+    }
+  });
+});
+
 

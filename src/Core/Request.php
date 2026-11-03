@@ -128,6 +128,15 @@ class Request {
     }
 
     public function getClientIp(): string {
-        return $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        $trustedProxies = ['127.0.0.1', '::1'];
+        if (in_array($remoteAddr, $trustedProxies, true) && !empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $parts = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            $forwarded = trim($parts[0]);
+            if (filter_var($forwarded, FILTER_VALIDATE_IP)) {
+                return $forwarded;
+            }
+        }
+        return filter_var($remoteAddr, FILTER_VALIDATE_IP) ? $remoteAddr : '127.0.0.1';
     }
 }

@@ -2,7 +2,7 @@
 /**
  * NexusAcademic - Enterprise Clean Architecture
  * Evaluations & Gradebook Data Model (Repository Pattern)
- * 100% Parameterized Queries & Anti-IDOR Protection
+ * 100% Parameterized Queries, Batch O(N) Matrix Aggregation & Anti-IDOR Protection
  */
 
 namespace NexusAcademic\Models;
@@ -41,24 +41,35 @@ class GradeModel {
 
     public static function createEvaluation(array $data): int {
         $pdo = Database::getConnection();
+        $groupId     = (int)($data['group_id'] ?? $data['groupId'] ?? 0);
+        $name        = trim((string)($data['name'] ?? ''));
+        $description = trim((string)($data['description'] ?? ''));
+        $type        = strtoupper(trim((string)($data['type'] ?? 'PARCIAL')));
+        $weight      = (float)($data['weight'] ?? 0);
+        $maxScore    = isset($data['max_score']) ? (float)$data['max_score'] : (isset($data['maxScore']) ? (float)$data['maxScore'] : 5.0);
+        $dueDate     = !empty($data['due_date']) ? $data['due_date'] : (!empty($data['dueDate']) ? $data['dueDate'] : null);
+
         $stmt = $pdo->prepare('
             INSERT INTO evaluations (group_id, name, description, type, weight, max_score, due_date, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, "ACTIVE")
         ');
         $stmt->execute([
-            $data['group_id'],
-            $data['name'],
-            $data['description'] ?: null,
-            $data['type'],
-            $data['weight'],
-            $data['max_score'] ?? 5.0,
-            $data['due_date'] ?: null
+            $groupId,
+            $name,
+            $description ?: null,
+            $type,
+            $weight,
+            $maxScore,
+            $dueDate
         ]);
         return (int)$pdo->lastInsertId();
     }
 
     public static function updateEvaluation(int $evalId, array $data): bool {
         $pdo = Database::getConnection();
+        $maxScore = isset($data['max_score']) ? (float)$data['max_score'] : (isset($data['maxScore']) ? (float)$data['maxScore'] : null);
+        $dueDate  = $data['due_date'] ?? ($data['dueDate'] ?? null);
+
         $stmt = $pdo->prepare('
             UPDATE evaluations 
             SET name = COALESCE(?, name),
@@ -72,10 +83,10 @@ class GradeModel {
         return $stmt->execute([
             $data['name'] ?? null,
             $data['description'] ?? null,
-            $data['type'] ?? null,
-            $data['weight'] ?? null,
-            $data['max_score'] ?? null,
-            $data['due_date'] ?? null,
+            isset($data['type']) ? strtoupper(trim((string)$data['type'])) : null,
+            isset($data['weight']) ? (float)$data['weight'] : null,
+            $maxScore,
+            $dueDate ?: null,
             $evalId
         ]);
     }
@@ -114,12 +125,12 @@ class GradeModel {
 
     public static function saveGrade(array $data): int {
         return Database::transaction(function (PDO $db) use ($data) {
-            $evalId    = (int)$data['evaluation_id'];
-            $studentId = (int)$data['student_id'];
+            $evalId    = (int)($data['evaluation_id'] ?? $data['evaluationId'] ?? 0);
+            $studentId = (int)($data['student_id'] ?? $data['studentId'] ?? 0);
             $score     = (float)$data['score'];
             $feedback  = $data['feedback'] ?? null;
             $changedBy = (int)$data['changed_by_user_id'];
-            $reason    = $data['change_reason'] ?? 'Calificación inicial registrada';
+            $reason    = trim((string)($data['change_reason'] ?? $data['changeReason'] ?? 'Calificación inicial registrada'));
             $ip        = $data['ip_address'] ?? '127.0.0.1';
 
             $chk = $db->prepare('SELECT id, score FROM grades WHERE evaluation_id = ? AND student_id = ?');
@@ -135,14 +146,14 @@ class GradeModel {
 
                 $upd = $db->prepare('
                     UPDATE grades 
-                    SET score = ?, feedback = ?, graded_at = CURRENT_TIMESTAMP, graded_by = ?
+                    SET score = ?, feedback = ?, graded_by_user_id = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                 ');
                 $upd->execute([$score, $feedback, $changedBy, $gradeId]);
             } else {
                 $ins = $db->prepare('
-                    INSERT INTO grades (evaluation_id, student_id, score, feedback, graded_at, graded_by)
-                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                    INSERT INTO grades (evaluation_id, student_id, score, feedback, graded_by_user_id)
+                    VALUES (?, ?, ?, ?, ?)
                 ');
                 $ins->execute([$evalId, $studentId, $score, $feedback, $changedBy]);
                 $gradeId = (int)$db->lastInsertId();
@@ -153,7 +164,7 @@ class GradeModel {
                 INSERT INTO grade_history (grade_id, evaluation_id, student_id, old_score, new_score, changed_by_user_id, change_reason, ip_address)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ');
-            $hist->execute([$gradeId, $evalId, $studentId, $oldScore, $score, $changedBy, $reason, $ip]);
+            $hist->execute([$gradeId, $evalId, $studentId, $oldScore, $score, $changedBy, $reason ?: 'Actualización de nota', $ip]);
 
             return $gradeId;
         });
@@ -164,11 +175,16 @@ class GradeModel {
         $stmt = $pdo->prepare('
             SELECT 
                 gh.*,
-                u.first_name AS changed_by_first_name, u.last_name AS changed_by_last_name, u.role AS changed_by_role
+                u.first_name,
+                u.last_name,
+                u.role,
+                u.first_name AS changed_by_first_name,
+                u.last_name AS changed_by_last_name,
+                u.role AS changed_by_role
             FROM grade_history gh
             JOIN users u ON gh.changed_by_user_id = u.id
             WHERE gh.grade_id = ?
-            ORDER BY gh.created_at DESC
+            ORDER BY gh.created_at DESC, gh.id DESC
         ');
         $stmt->execute([$gradeId]);
         return $stmt->fetchAll();
@@ -196,6 +212,10 @@ class GradeModel {
         $gStmt->execute([$studentId]);
         $groups = $gStmt->fetchAll();
 
+        if (empty($groups)) {
+            return [];
+        }
+
         // 2. Fetch institution passing grade bounds
         $minPass = 3.0;
         $maxG = 5.0;
@@ -208,30 +228,44 @@ class GradeModel {
             }
         } catch (\Throwable $e) {}
 
-        // Load GradeService for weighted calculations
         $serviceFile = dirname(__DIR__) . '/services/GradeService.php';
         if (file_exists($serviceFile)) {
             require_once $serviceFile;
         }
 
+        // 3. Batch-load evaluations and student grades for all enrolled groups (Zero N+1)
+        $groupIds = array_map(fn($g) => (int)$g['group_id'], $groups);
+        $placeholders = implode(',', array_fill(0, count($groupIds), '?'));
+
+        $evStmt = $pdo->prepare("SELECT * FROM evaluations WHERE group_id IN ($placeholders) AND status = 'ACTIVE' ORDER BY due_date ASC, id ASC");
+        $evStmt->execute($groupIds);
+        $allEvaluations = $evStmt->fetchAll();
+
+        $evalsByGroup = [];
+        foreach ($allEvaluations as $ev) {
+            $evalsByGroup[(int)$ev['group_id']][] = $ev;
+        }
+
+        $grStmt = $pdo->prepare("
+            SELECT g.*, ev.group_id
+            FROM grades g
+            JOIN evaluations ev ON g.evaluation_id = ev.id
+            WHERE ev.group_id IN ($placeholders) AND g.student_id = ?
+        ");
+        $grParams = array_merge($groupIds, [$studentId]);
+        $grStmt->execute($grParams);
+        $allGrades = $grStmt->fetchAll();
+
+        $gradesByGroup = [];
+        foreach ($allGrades as $gr) {
+            $gradesByGroup[(int)$gr['group_id']][] = $gr;
+        }
+
         $report = [];
         foreach ($groups as $group) {
             $groupId = (int)$group['group_id'];
-
-            // Active evaluations for this group
-            $evStmt = $pdo->prepare('SELECT * FROM evaluations WHERE group_id = ? AND status = "ACTIVE" ORDER BY due_date ASC, id ASC');
-            $evStmt->execute([$groupId]);
-            $evaluations = $evStmt->fetchAll();
-
-            // Grades assigned to this student in this group
-            $grStmt = $pdo->prepare('
-                SELECT g.* 
-                FROM grades g
-                JOIN evaluations ev ON g.evaluation_id = ev.id
-                WHERE ev.group_id = ? AND g.student_id = ?
-            ');
-            $grStmt->execute([$groupId, $studentId]);
-            $grades = $grStmt->fetchAll();
+            $evaluations = $evalsByGroup[$groupId] ?? [];
+            $grades      = $gradesByGroup[$groupId] ?? [];
 
             $stats = class_exists('GradeService')
                 ? \GradeService::calculateStudentAverage($evaluations, $grades, $minPass, $maxG)
@@ -247,8 +281,10 @@ class GradeModel {
                 ];
 
             $report[] = [
-                'group' => $group,
-                'stats' => $stats
+                'course'      => $group,
+                'group'       => $group,
+                'calculation' => $stats,
+                'stats'       => $stats
             ];
         }
 
@@ -273,7 +309,7 @@ class GradeModel {
         $group = $gStmt->fetch();
 
         // 2. Get Evaluations
-        $eStmt = $pdo->prepare('SELECT * FROM evaluations WHERE group_id = ? AND status = "ACTIVE" ORDER BY id ASC');
+        $eStmt = $pdo->prepare('SELECT * FROM evaluations WHERE group_id = ? AND status = "ACTIVE" ORDER BY due_date ASC, id ASC');
         $eStmt->execute([$groupId]);
         $evaluations = $eStmt->fetchAll();
 
@@ -291,9 +327,9 @@ class GradeModel {
         $sStmt->execute([$groupId]);
         $students = $sStmt->fetchAll();
 
-        // 4. Get all grades for this group
+        // 4. Get all grades for this group in one batch query
         $allGradesStmt = $pdo->prepare('
-            SELECT g.evaluation_id, g.student_id, g.score, g.feedback, g.graded_at
+            SELECT g.id, g.evaluation_id, g.student_id, g.score, g.feedback, g.updated_at AS graded_at
             FROM grades g
             JOIN evaluations ev ON g.evaluation_id = ev.id
             WHERE ev.group_id = ?
@@ -303,12 +339,13 @@ class GradeModel {
 
         $gradeLookup = [];
         foreach ($allGrades as $gr) {
-            $gradeLookup[$gr['student_id']][$gr['evaluation_id']] = $gr;
+            $gradeLookup[(int)$gr['student_id']][(int)$gr['evaluation_id']] = $gr;
         }
 
         // Build weighted matrix rows
         $matrixRows = [];
         foreach ($students as $student) {
+            $sId = (int)$student['student_id'];
             $studentGrades = [];
             $accumulatedScore = 0.0;
             $accumulatedWeight = 0.0;
@@ -316,39 +353,45 @@ class GradeModel {
             foreach ($evaluations as $ev) {
                 $evId = (int)$ev['id'];
                 $w = (float)$ev['weight'];
-                $gRecord = $gradeLookup[$student['student_id']][$evId] ?? null;
+                $gRecord = $gradeLookup[$sId][$evId] ?? null;
 
                 if ($gRecord !== null) {
                     $scoreVal = (float)$gRecord['score'];
                     $studentGrades[] = [
+                        'gradeId'      => (int)$gRecord['id'],
                         'evaluationId' => $evId,
                         'name'         => $ev['name'],
                         'weight'       => $w,
                         'score'        => $scoreVal,
+                        'feedback'     => $gRecord['feedback'] ?? null,
                         'isGraded'     => true
                     ];
                     $accumulatedScore += ($scoreVal * ($w / 100.0));
                     $accumulatedWeight += $w;
                 } else {
                     $studentGrades[] = [
+                        'gradeId'      => null,
                         'evaluationId' => $evId,
                         'name'         => $ev['name'],
                         'weight'       => $w,
                         'score'        => null,
+                        'feedback'     => null,
                         'isGraded'     => false
                     ];
                 }
             }
 
-            $weightedAvg = $accumulatedWeight > 0 
+            $weightedAvg = $accumulatedWeight > 0
                 ? round($accumulatedScore / ($accumulatedWeight / 100.0), 2)
                 : null;
 
             $matrixRows[] = [
-                'student'         => $student,
-                'grades'          => $studentGrades,
-                'weightedAverage' => $weightedAvg,
-                'isPassing'       => ($weightedAvg !== null && $weightedAvg >= 3.0)
+                'student'              => $student,
+                'grades'               => $studentGrades,
+                'weightedAverage'      => $weightedAvg,
+                'accumulatedScore'     => round($accumulatedScore, 2),
+                'totalEvaluatedWeight' => round($accumulatedWeight, 2),
+                'isPassing'            => ($weightedAvg !== null && $weightedAvg >= 3.0)
             ];
         }
 
@@ -356,7 +399,8 @@ class GradeModel {
             'group'       => $group,
             'evaluations' => $evaluations,
             'students'    => $students,
-            'rows'        => $matrixRows
+            'rows'        => $matrixRows,
+            'matrix'      => $matrixRows
         ];
     }
 }

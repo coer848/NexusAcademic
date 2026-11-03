@@ -113,6 +113,8 @@ CREATE TABLE `course_groups` (
   `group_code` VARCHAR(20) NOT NULL,
   `schedule` VARCHAR(150) NOT NULL,
   `classroom` VARCHAR(100) NOT NULL,
+  `max_students` INT NOT NULL DEFAULT 30,
+  `status` ENUM('ACTIVE', 'CLOSED') NOT NULL DEFAULT 'ACTIVE',
   `geo_lat` DECIMAL(10,7) DEFAULT 4.6097000,
   `geo_lng` DECIMAL(10,7) DEFAULT -74.0817000,
   `geo_radius_meters` DECIMAL(6,2) DEFAULT 100.00,

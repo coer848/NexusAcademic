@@ -32,10 +32,10 @@ class AcademicService {
     }
 
     public static function createPeriod(array $user, array $data, ?string $ip = null): int {
-        $name      = trim($data['name'] ?? '');
-        $startDate = trim($data['start_date'] ?? '');
-        $endDate   = trim($data['end_date'] ?? '');
-        $isActive  = !empty($data['is_active']) ? 1 : 0;
+        $name      = trim((string)($data['name'] ?? ''));
+        $startDate = trim((string)($data['start_date'] ?? $data['startDate'] ?? ''));
+        $endDate   = trim((string)($data['end_date'] ?? $data['endDate'] ?? ''));
+        $isActive  = (!empty($data['is_active']) || !empty($data['isActive'])) ? 1 : 0;
 
         if (empty($name) || empty($startDate) || empty($endDate)) {
             throw new Exception('Nombre y fechas de inicio/fin son obligatorios.', 400);
@@ -51,10 +51,10 @@ class AcademicService {
     }
 
     public static function createSubject(array $user, array $data, ?string $ip = null): int {
-        $code        = strtoupper(trim($data['code'] ?? ''));
-        $name        = trim($data['name'] ?? '');
+        $code        = strtoupper(trim((string)($data['code'] ?? '')));
+        $name        = trim((string)($data['name'] ?? ''));
         $credits     = isset($data['credits']) ? (int)$data['credits'] : 3;
-        $description = trim($data['description'] ?? '');
+        $description = trim((string)($data['description'] ?? ''));
 
         if (empty($code) || empty($name)) {
             throw new Exception('Código y nombre de la asignatura son obligatorios.', 400);
@@ -83,10 +83,10 @@ class AcademicService {
         }
 
         // Anti-IDOR Authorization Check
-        if ($user['role'] === 'TEACHER' && (int)$group['teacher_id'] !== (int)$user['teacherId']) {
+        if (($user['role'] ?? '') === 'TEACHER' && (int)$group['teacher_id'] !== (int)($user['teacherId'] ?? 0)) {
             throw new Exception('No tiene permisos para acceder a este grupo.', 403);
         }
-        if ($user['role'] === 'STUDENT') {
+        if (($user['role'] ?? '') === 'STUDENT') {
             $studentId = (int)($user['studentId'] ?? 0);
             if (!$studentId || !AcademicModel::isStudentEnrolled($groupId, $studentId)) {
                 throw new Exception('Acceso denegado: Usted no se encuentra matriculado en este grupo.', 403);
@@ -119,67 +119,95 @@ class AcademicService {
         $eStmt->execute([$groupId]);
         $evaluations = $eStmt->fetchAll();
 
-        // Load latest class session
+        // Load latest class session (ordered by started_at DESC)
         $sessStmt = $pdo->prepare('
             SELECT * FROM class_sessions 
             WHERE group_id = ? 
-            ORDER BY created_at DESC 
+            ORDER BY started_at DESC, id DESC 
             LIMIT 1
         ');
         $sessStmt->execute([$groupId]);
         $latestSession = $sessStmt->fetch() ?: null;
 
         return [
-            'group'            => $group,
-            'students'         => $enrolledStudents,
-            'evaluations'      => $evaluations,
-            'activeSession'    => ($latestSession && $latestSession['status'] === 'ACTIVE') ? $latestSession : null,
-            'latestSession'    => $latestSession
+            'group'         => $group,
+            'students'      => $enrolledStudents,
+            'evaluations'   => $evaluations,
+            'activeSession' => ($latestSession && $latestSession['status'] === 'ACTIVE') ? $latestSession : null,
+            'latestSession' => $latestSession
         ];
     }
 
     public static function createGroup(array $user, array $data, ?string $ip = null): int {
-        $subjectId = (int)($data['subject_id'] ?? 0);
-        $periodId  = (int)($data['period_id'] ?? 0);
-        $groupCode = strtoupper(trim($data['group_code'] ?? ''));
+        $subjectId = (int)($data['subject_id'] ?? $data['subjectId'] ?? 0);
+        $periodId  = (int)($data['period_id'] ?? $data['periodId'] ?? 0);
+        $teacherId = (int)($data['teacher_id'] ?? $data['teacherId'] ?? 0);
+        $groupCode = strtoupper(trim((string)($data['group_code'] ?? $data['groupCode'] ?? '')));
 
         if (!$subjectId || !$periodId || empty($groupCode)) {
-            throw new Exception('subject_id, period_id y group_code son obligatorios.', 400);
+            throw new Exception('Asignatura, periodo académico y código de grupo son obligatorios.', 400);
         }
 
-        $id = AcademicModel::createGroup($data);
-        AuditModel::log((int)$user['id'], 'GROUP_CREATED', 'COURSE_GROUP', (string)$id, ['code' => $groupCode], $ip);
-        return $id;
+        if (!$teacherId) {
+            $pdo = Database::getConnection();
+            $tRow = $pdo->query('SELECT id FROM teachers ORDER BY id ASC LIMIT 1')->fetch();
+            $teacherId = $tRow ? (int)$tRow['id'] : 1;
+        }
+
+        $data['subject_id'] = $subjectId;
+        $data['period_id']  = $periodId;
+        $data['teacher_id'] = $teacherId;
+        $data['group_code'] = $groupCode;
+
+        try {
+            $id = AcademicModel::createGroup($data);
+            AuditModel::log((int)$user['id'], 'GROUP_CREATED', 'COURSE_GROUP', (string)$id, ['code' => $groupCode], $ip);
+            return $id;
+        } catch (\PDOException $e) {
+            if ($e->getCode() == 23000) {
+                throw new Exception("Ya existe un grupo registrado con el código '{$groupCode}' en este periodo.", 409);
+            }
+            throw $e;
+        }
     }
 
     public static function createTeacherCourse(array $user, array $data, ?string $ip = null): int {
-        $teacherId = (int)($user['teacherId'] ?? 0);
-        if (!$teacherId && $user['role'] !== 'ADMIN') {
+        $teacherId = (int)($user['teacherId'] ?? $data['teacher_id'] ?? $data['teacherId'] ?? 0);
+        $isAdmin = in_array($user['role'] ?? '', ['ADMIN', 'SUPERADMIN'], true);
+
+        if (!$teacherId && !$isAdmin) {
             throw new Exception('No se encontró el perfil docente asociado al usuario.', 403);
         }
 
-        $subjectName = trim($data['subject_name'] ?? '');
-        $groupCode   = strtoupper(trim($data['group_code'] ?? ''));
-        $classroom   = trim($data['classroom'] ?? 'Aula Virtual / Presencial');
-        $schedule    = trim($data['schedule'] ?? 'Horario Flexible');
+        $pdo = Database::getConnection();
+        if (!$teacherId) {
+            $tRow = $pdo->query('SELECT id FROM teachers ORDER BY id ASC LIMIT 1')->fetch();
+            $teacherId = $tRow ? (int)$tRow['id'] : 1;
+        }
+
+        $subjectName    = trim((string)($data['subject_name'] ?? $data['subjectName'] ?? ''));
+        $subjectCodeReq = strtoupper(trim((string)($data['subject_code'] ?? $data['subjectCode'] ?? '')));
+        $credits        = isset($data['credits']) ? (int)$data['credits'] : 3;
+        $groupCode      = strtoupper(trim((string)($data['group_code'] ?? $data['groupCode'] ?? '')));
+        $classroom      = trim((string)($data['classroom'] ?? 'Aula Virtual / Presencial'));
+        $schedule       = trim((string)($data['schedule'] ?? 'Horario Flexible'));
+        $geoRadius      = isset($data['geo_radius_meters']) ? (float)$data['geo_radius_meters'] : (isset($data['geoRadiusMeters']) ? (float)$data['geoRadiusMeters'] : 100.0);
 
         if (empty($subjectName) || empty($groupCode)) {
             throw new Exception('El nombre de la asignatura y el código del grupo son obligatorios.', 400);
         }
 
-        $pdo = Database::getConnection();
-
         // 1. Find or create subject
-        $sFind = $pdo->prepare('SELECT id FROM subjects WHERE name = ? LIMIT 1');
-        $sFind->execute([$subjectName]);
+        $sFind = $pdo->prepare('SELECT id FROM subjects WHERE name = ? OR (code = ? AND ? != "") LIMIT 1');
+        $sFind->execute([$subjectName, $subjectCodeReq, $subjectCodeReq]);
         $subj = $sFind->fetch();
 
         if ($subj) {
             $subjectId = (int)$subj['id'];
         } else {
-            $codeGen = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $subjectName), 0, 4)) . '-' . rand(100, 999);
-            $sIns = $pdo->prepare('INSERT INTO subjects (code, name, credits) VALUES (?, ?, 3)');
-            $sIns->execute([$codeGen, $subjectName]);
+            $codeGen = $subjectCodeReq ?: (strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $subjectName), 0, 4)) . '-' . rand(100, 999));
+            $sIns = $pdo->prepare('INSERT INTO subjects (code, name, credits) VALUES (?, ?, ?)');
+            $sIns->execute([$codeGen, $subjectName, max(1, $credits)]);
             $subjectId = (int)$pdo->lastInsertId();
         }
 
@@ -188,7 +216,7 @@ class AcademicService {
         $period = $pFind->fetch();
         if (!$period) {
             $pIns = $pdo->prepare('INSERT INTO academic_periods (name, start_date, end_date, is_active) VALUES (?, CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 6 MONTH), 1)');
-            $pIns->execute(['Periodo ' . date('Y') . '-I']);
+            $pIns->execute([date('Y') . '-1 (Semestre Activo)']);
             $periodId = (int)$pdo->lastInsertId();
         } else {
             $periodId = (int)$period['id'];
@@ -198,14 +226,13 @@ class AcademicService {
         $groupId = AcademicModel::createGroup([
             'subject_id'        => $subjectId,
             'period_id'         => $periodId,
-            'teacher_id'        => $teacherId ?: null,
+            'teacher_id'        => $teacherId,
             'group_code'        => $groupCode,
             'classroom'         => $classroom,
-            'schedule_json'     => json_encode(['details' => $schedule]),
-            'max_students'      => 40,
+            'schedule'          => $schedule,
             'geo_lat'           => 4.6097,
             'geo_lng'           => -74.0817,
-            'geo_radius_meters' => 100
+            'geo_radius_meters' => $geoRadius
         ]);
 
         AuditModel::log((int)$user['id'], 'TEACHER_COURSE_CREATED', 'COURSE_GROUP', (string)$groupId, [
@@ -222,7 +249,7 @@ class AcademicService {
             throw new Exception('Grupo no encontrado.', 404);
         }
 
-        if ($user['role'] === 'TEACHER' && (int)$group['teacher_id'] !== (int)$user['teacherId']) {
+        if (($user['role'] ?? '') === 'TEACHER' && (int)$group['teacher_id'] !== (int)($user['teacherId'] ?? 0)) {
             throw new Exception('No tiene permisos para modificar este grupo.', 403);
         }
 
@@ -236,7 +263,7 @@ class AcademicService {
             throw new Exception('Grupo no encontrado.', 404);
         }
 
-        if ($user['role'] === 'TEACHER' && (int)$group['teacher_id'] !== (int)$user['teacherId']) {
+        if (($user['role'] ?? '') === 'TEACHER' && (int)$group['teacher_id'] !== (int)($user['teacherId'] ?? 0)) {
             throw new Exception('No tiene permisos para eliminar este grupo.', 403);
         }
 
@@ -250,15 +277,15 @@ class AcademicService {
     }
 
     public static function enrollStudent(array $user, array $data, ?string $ip = null): int {
-        $groupId   = (int)($data['group_id'] ?? 0);
-        $studentId = isset($data['student_id']) ? (int)$data['student_id'] : (int)($user['studentId'] ?? 0);
+        $groupId   = (int)($data['group_id'] ?? $data['groupId'] ?? 0);
+        $studentId = isset($data['student_id']) ? (int)$data['student_id'] : (isset($data['studentId']) ? (int)$data['studentId'] : (int)($user['studentId'] ?? 0));
 
         if (!$groupId || !$studentId) {
             throw new Exception('group_id y student_id son requeridos.', 400);
         }
 
         // Anti-IDOR: Student can only enroll themselves
-        if ($user['role'] === 'STUDENT' && (int)$user['studentId'] !== $studentId) {
+        if (($user['role'] ?? '') === 'STUDENT' && (int)($user['studentId'] ?? 0) !== $studentId) {
             throw new Exception('No puede matricular a otros estudiantes.', 403);
         }
 

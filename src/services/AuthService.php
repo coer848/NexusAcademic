@@ -23,16 +23,16 @@ require_once __DIR__ . '/../Models/AuditModel.php';
 class AuthService {
 
     public static function register(array $data, ?string $clientIp = null): array {
-        $email      = strtolower(trim($data['email'] ?? ''));
-        $password   = $data['password'] ?? '';
-        $firstName  = trim($data['first_name'] ?? '');
-        $lastName   = trim($data['last_name'] ?? '');
-        $phone      = trim($data['phone'] ?? '');
-        $role       = strtoupper(trim($data['role'] ?? ''));
-        $code       = trim($data['code'] ?? '');
-        $career     = trim($data['career'] ?? '');
-        $department = trim($data['department'] ?? '');
-        $specialty  = trim($data['specialty'] ?? '');
+        $email      = strtolower(trim((string)($data['email'] ?? '')));
+        $password   = (string)($data['password'] ?? '');
+        $firstName  = trim((string)($data['first_name'] ?? $data['firstName'] ?? ''));
+        $lastName   = trim((string)($data['last_name'] ?? $data['lastName'] ?? ''));
+        $phone      = trim((string)($data['phone'] ?? ''));
+        $role       = strtoupper(trim((string)($data['role'] ?? '')));
+        $code       = trim((string)($data['code'] ?? ''));
+        $career     = trim((string)($data['career'] ?? ''));
+        $department = trim((string)($data['department'] ?? ''));
+        $specialty  = trim((string)($data['specialty'] ?? ''));
         $semester   = isset($data['semester']) ? (int)$data['semester'] : 1;
 
         if (empty($email) || empty($password) || empty($firstName) || empty($lastName) || empty($role)) {
@@ -68,7 +68,7 @@ class AuthService {
         }
 
         // Validate Institutional Role Authorization Key
-        $institutionalKey = trim($data['institutional_key'] ?? '');
+        $institutionalKey   = trim((string)($data['institutional_key'] ?? $data['institutionalKey'] ?? ''));
         $expectedTeacherKey = defined('TEACHER_REGISTRATION_KEY') ? TEACHER_REGISTRATION_KEY : env('TEACHER_REGISTRATION_KEY', 'NEXUS-DOCENTE-AUTH-2026');
         $expectedAdminKey   = defined('ADMIN_REGISTRATION_KEY') ? ADMIN_REGISTRATION_KEY : env('ADMIN_REGISTRATION_KEY', 'NEXUS-ADMIN-MASTER-2026');
 
@@ -84,7 +84,7 @@ class AuthService {
 
         $passwordHash = CryptoService::hashPassword($password);
 
-        $result = Database::transaction(function (\PDO $db) use ($email, $passwordHash, $firstName, $lastName, $phone, $role, $code, $department, $specialty, $career, $semester, $clientIp) {
+        return Database::transaction(function (\PDO $db) use ($email, $passwordHash, $firstName, $lastName, $phone, $role, $code, $department, $specialty, $career, $semester, $clientIp) {
             $userId = UserModel::createUser($db, $email, $passwordHash, $firstName, $lastName, !empty($phone) ? $phone : null, $role);
 
             $teacherProfile = null;
@@ -95,7 +95,7 @@ class AuthService {
                 $tDept = !empty($department) ? $department : 'Facultad de Ingeniería & Tecnología';
                 $tSpec = !empty($specialty) ? $specialty : 'Docencia Universitaria';
                 $tId = UserModel::createTeacherProfile($db, $userId, $teacherCode, $tDept, $tSpec);
-                $teacherProfile = ['id' => $tId, 'teacher_code' => $teacherCode, 'department' => $tDept];
+                $teacherProfile = ['id' => $tId, 'teacher_code' => $teacherCode, 'department' => $tDept, 'specialty' => $tSpec];
             } elseif ($role === 'STUDENT') {
                 $studentCode = !empty($code) ? strtoupper($code) : 'EST-' . date('Y') . '-' . rand(1000, 9999);
                 $sCareer = !empty($career) ? $career : 'Ingeniería de Software & Computación';
@@ -120,15 +120,17 @@ class AuthService {
                     'email'          => $email,
                     'firstName'      => $firstName,
                     'lastName'       => $lastName,
+                    'first_name'     => $firstName,
+                    'last_name'      => $lastName,
                     'phone'          => $phone,
                     'role'           => $role,
                     'teacherProfile' => $teacherProfile,
-                    'studentProfile' => $studentProfile
+                    'teacher'        => $teacherProfile,
+                    'studentProfile' => $studentProfile,
+                    'student'        => $studentProfile
                 ]
             ];
         });
-
-        return $result;
     }
 
     public static function login(string $email, string $password, ?string $clientIp = null): array {
@@ -190,10 +192,14 @@ class AuthService {
                 'email'          => $user['email'],
                 'firstName'      => $user['first_name'],
                 'lastName'       => $user['last_name'],
+                'first_name'     => $user['first_name'],
+                'last_name'      => $user['last_name'],
                 'phone'          => $user['phone'] ?? '',
                 'role'           => $user['role'],
                 'teacherProfile' => $teacherProfile,
-                'studentProfile' => $studentProfile
+                'teacher'        => $teacherProfile,
+                'studentProfile' => $studentProfile,
+                'student'        => $studentProfile
             ]
         ];
     }
@@ -221,12 +227,17 @@ class AuthService {
                 'email'          => $dbUser['email'],
                 'firstName'      => $dbUser['first_name'],
                 'lastName'       => $dbUser['last_name'],
+                'first_name'     => $dbUser['first_name'],
+                'last_name'      => $dbUser['last_name'],
                 'phone'          => $dbUser['phone'] ?? '',
                 'role'           => $dbUser['role'],
                 'status'         => $dbUser['status'],
                 'createdAt'      => $dbUser['created_at'],
+                'created_at'     => $dbUser['created_at'],
                 'teacherProfile' => $teacherProfile,
-                'studentProfile' => $studentProfile
+                'teacher'        => $teacherProfile,
+                'studentProfile' => $studentProfile,
+                'student'        => $studentProfile
             ],
             'institution' => $institution
         ];
@@ -257,9 +268,9 @@ class AuthService {
     }
 
     public static function updateProfile(array $user, array $data, ?string $clientIp = null): array {
-        $firstName = trim($data['first_name'] ?? '');
-        $lastName  = trim($data['last_name'] ?? '');
-        $phone     = trim($data['phone'] ?? '');
+        $firstName = trim((string)($data['first_name'] ?? $data['firstName'] ?? ''));
+        $lastName  = trim((string)($data['last_name'] ?? $data['lastName'] ?? ''));
+        $phone     = trim((string)($data['phone'] ?? ''));
 
         if (empty($firstName) || empty($lastName)) {
             throw new Exception('El nombre y el apellido son obligatorios.', 400);
@@ -272,8 +283,21 @@ class AuthService {
             }
         }
 
-        UserModel::updateProfile((int)$user['id'], $firstName, $lastName, !empty($phone) ? $phone : null);
-        AuditModel::log((int)$user['id'], 'PROFILE_UPDATED', 'USER', (string)$user['id'], ['phone' => $phone], $clientIp);
+        $userId = (int)$user['id'];
+        UserModel::updateProfile($userId, $firstName, $lastName, !empty($phone) ? $phone : null);
+
+        $role = $user['role'] ?? '';
+        if ($role === 'STUDENT' && (isset($data['career']) || isset($data['semester']))) {
+            $career   = isset($data['career']) ? trim((string)$data['career']) : null;
+            $semester = isset($data['semester']) ? (int)$data['semester'] : null;
+            UserModel::updateStudentProfileByUserId($userId, $career, $semester);
+        } elseif ($role === 'TEACHER' && (isset($data['department']) || isset($data['specialty']))) {
+            $department = isset($data['department']) ? trim((string)$data['department']) : null;
+            $specialty  = isset($data['specialty']) ? trim((string)$data['specialty']) : null;
+            UserModel::updateTeacherProfileByUserId($userId, $department, $specialty);
+        }
+
+        AuditModel::log($userId, 'PROFILE_UPDATED', 'USER', (string)$userId, ['phone' => $phone], $clientIp);
 
         return self::getMe($user);
     }
