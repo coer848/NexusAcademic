@@ -19,7 +19,7 @@ require_once __DIR__ . '/../Core/Response.php';
 require_once __DIR__ . '/../Models/GradeModel.php';
 require_once __DIR__ . '/../Models/AcademicModel.php';
 require_once __DIR__ . '/../Models/AuditModel.php';
-require_once __DIR__ . '/../Services/GradeService.php';
+require_once __DIR__ . '/../services/GradeService.php';
 
 class GradeController {
 
@@ -29,9 +29,9 @@ class GradeController {
             $data = ($req instanceof Request) ? $req->getBody() : (array)$body;
             $ip   = ($req instanceof Request) ? $req->getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
 
-            $groupId = (int)($data['group_id'] ?? 0);
-            $name    = trim($data['name'] ?? '');
-            $type    = strtoupper(trim($data['type'] ?? ''));
+            $groupId = (int)($data['group_id'] ?? $data['groupId'] ?? 0);
+            $name    = trim((string)($data['name'] ?? ''));
+            $type    = strtoupper(trim((string)($data['type'] ?? 'PARCIAL')));
             $weight  = isset($data['weight']) ? (float)$data['weight'] : null;
 
             if (!$groupId || empty($name) || empty($type) || $weight === null) {
@@ -43,7 +43,7 @@ class GradeController {
                 throw new Exception('Grupo no encontrado.', 404);
             }
 
-            if ($user['role'] === 'TEACHER' && (int)$group['teacher_id'] !== (int)$user['teacherId']) {
+            if (($user['role'] ?? '') === 'TEACHER' && (int)$group['teacher_id'] !== (int)($user['teacherId'] ?? 0)) {
                 throw new Exception('No es el docente de este grupo.', 403);
             }
 
@@ -56,6 +56,11 @@ class GradeController {
             if (!$weightVal['valid']) {
                 throw new Exception("La suma de ponderaciones ({$weightVal['projectedTotal']}%) superaría el 100%. Máximo disponible: {$weightVal['maxAllowed']}%.", 400);
             }
+
+            $data['group_id'] = $groupId;
+            $data['name']     = $name;
+            $data['type']     = $type;
+            $data['weight']   = $weight;
 
             $evalId = GradeModel::createEvaluation($data);
             AuditModel::log((int)$user['id'], 'EVALUATION_CREATED', 'EVALUATION', (string)$evalId, [
@@ -83,7 +88,7 @@ class GradeController {
                 throw new Exception('Evaluación no encontrada.', 404);
             }
 
-            if ($user['role'] === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)$user['teacherId']) {
+            if (($user['role'] ?? '') === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)($user['teacherId'] ?? 0)) {
                 throw new Exception('No tiene permisos para modificar esta evaluación.', 403);
             }
 
@@ -93,8 +98,7 @@ class GradeController {
                     throw new Exception('La ponderación debe estar entre 1% y 100%.', 400);
                 }
                 $existing = GradeModel::getEvaluationsByGroup((int)$evalObj['group_id']);
-                $filtered = array_filter($existing, fn($e) => (int)$e['id'] !== $id);
-                $weightVal = GradeService::validateEvaluationWeights($filtered, $newWeight);
+                $weightVal = GradeService::validateEvaluationWeights($existing, $newWeight, $id);
                 if (!$weightVal['valid']) {
                     throw new Exception("La suma de ponderaciones ({$weightVal['projectedTotal']}%) superaría el 100%.", 400);
                 }
@@ -121,7 +125,7 @@ class GradeController {
                 throw new Exception('Evaluación no encontrada.', 404);
             }
 
-            if ($user['role'] === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)$user['teacherId']) {
+            if (($user['role'] ?? '') === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)($user['teacherId'] ?? 0)) {
                 throw new Exception('No tiene permisos para eliminar esta evaluación.', 403);
             }
 
@@ -141,9 +145,9 @@ class GradeController {
             $data = ($req instanceof Request) ? $req->getBody() : (array)$body;
             $ip   = ($req instanceof Request) ? $req->getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
 
-            $evalId    = (int)($data['evaluation_id'] ?? 0);
-            $studentId = (int)($data['student_id'] ?? 0);
-            $score     = isset($data['score']) ? (float)$data['score'] : null;
+            $evalId    = (int)($data['evaluation_id'] ?? $data['evaluationId'] ?? 0);
+            $studentId = (int)($data['student_id'] ?? $data['studentId'] ?? 0);
+            $score     = isset($data['score']) && is_numeric($data['score']) ? (float)$data['score'] : null;
 
             if (!$evalId || !$studentId || $score === null) {
                 throw new Exception('evaluation_id, student_id y score son requeridos.', 400);
@@ -154,7 +158,7 @@ class GradeController {
                 throw new Exception('Evaluación no encontrada.', 404);
             }
 
-            if ($user['role'] === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)$user['teacherId']) {
+            if (($user['role'] ?? '') === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)($user['teacherId'] ?? 0)) {
                 throw new Exception('No es el docente a cargo de esta calificación.', 403);
             }
 
@@ -169,8 +173,11 @@ class GradeController {
                 throw new Exception('El estudiante indicado no se encuentra matriculado en este curso.', 400);
             }
 
+            $data['evaluation_id']      = $evalId;
+            $data['student_id']         = $studentId;
+            $data['score']              = $score;
             $data['changed_by_user_id'] = (int)$user['id'];
-            $data['ip_address'] = $ip;
+            $data['ip_address']         = $ip;
 
             $gradeId = GradeModel::saveGrade($data);
             AuditModel::log((int)$user['id'], 'GRADE_SAVED', 'GRADE', (string)$gradeId, [
@@ -192,7 +199,7 @@ class GradeController {
             $data = ($req instanceof Request) ? $req->getBody() : (array)$body;
             $ip   = ($req instanceof Request) ? $req->getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
 
-            $evalId = (int)($data['evaluation_id'] ?? 0);
+            $evalId = (int)($data['evaluation_id'] ?? $data['evaluationId'] ?? 0);
             $grades = $data['grades'] ?? [];
 
             if (!$evalId || !is_array($grades)) {
@@ -204,7 +211,7 @@ class GradeController {
                 throw new Exception('Evaluación no encontrada.', 404);
             }
 
-            if ($user['role'] === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)$user['teacherId']) {
+            if (($user['role'] ?? '') === 'TEACHER' && (int)$evalObj['teacher_id'] !== (int)($user['teacherId'] ?? 0)) {
                 throw new Exception('No tiene permisos sobre esta evaluación.', 403);
             }
 
@@ -212,17 +219,16 @@ class GradeController {
             $processedCount = 0;
 
             foreach ($grades as $g) {
-                $studentId = (int)($g['student_id'] ?? 0);
-                $score = isset($g['score']) ? (float)$g['score'] : null;
+                $studentId = (int)($g['student_id'] ?? $g['studentId'] ?? 0);
+                $score = isset($g['score']) && is_numeric($g['score']) ? (float)$g['score'] : null;
                 if ($studentId && $score !== null && GradeService::isValidScore($score, 0.0, $maxScore)) {
-                    // Anti-IDOR check on batch enrollment
                     if (AcademicModel::isStudentEnrolled((int)$evalObj['group_id'], $studentId)) {
                         GradeModel::saveGrade([
                             'evaluation_id'      => $evalId,
                             'student_id'         => $studentId,
                             'score'              => $score,
                             'feedback'           => $g['feedback'] ?? null,
-                            'change_reason'      => $g['change_reason'] ?? 'Calificación masiva de grupo',
+                            'change_reason'      => $g['change_reason'] ?? ($g['changeReason'] ?? 'Calificación masiva de grupo'),
                             'changed_by_user_id' => (int)$user['id'],
                             'ip_address'         => $ip
                         ]);
@@ -248,7 +254,7 @@ class GradeController {
                 throw new Exception('Grupo no encontrado.', 404);
             }
 
-            if ($user['role'] === 'TEACHER' && (int)$group['teacher_id'] !== (int)$user['teacherId']) {
+            if (($user['role'] ?? '') === 'TEACHER' && (int)$group['teacher_id'] !== (int)($user['teacherId'] ?? 0)) {
                 throw new Exception('No tiene permisos para ver las notas de este grupo.', 403);
             }
 
@@ -268,8 +274,8 @@ class GradeController {
                 throw new Exception('Perfil de estudiante no encontrado.', 403);
             }
 
-            $grades = GradeModel::getMyGrades($studentId);
-            Response::json($grades);
+            $report = GradeModel::getStudentCourseGradesReport($studentId);
+            Response::json($report);
         } catch (Exception $e) {
             $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
             Response::error($e->getMessage(), 'MY_GRADES_ERROR', $code);
@@ -287,10 +293,10 @@ class GradeController {
             }
 
             // Anti-IDOR Authorization
-            if ($user['role'] === 'STUDENT' && (int)$grade['student_id'] !== (int)$user['studentId']) {
+            if (($user['role'] ?? '') === 'STUDENT' && (int)$grade['student_id'] !== (int)($user['studentId'] ?? 0)) {
                 throw new Exception('Acceso denegado: No puede consultar el historial de calificaciones de otros estudiantes.', 403);
             }
-            if ($user['role'] === 'TEACHER' && (int)$grade['teacher_id'] !== (int)$user['teacherId']) {
+            if (($user['role'] ?? '') === 'TEACHER' && (int)$grade['teacher_id'] !== (int)($user['teacherId'] ?? 0)) {
                 throw new Exception('Acceso denegado: No es el docente asignado a esta asignatura.', 403);
             }
 

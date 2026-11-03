@@ -65,6 +65,26 @@
           </div>
         </div>
 
+        <!-- Theme Switcher (Dark / Light Mode) -->
+        <button class="btn-theme-toggle" id="btnThemeToggle" title="Alternar Modo Oscuro / Claro" aria-label="Alternar tema">
+          <svg class="svg-icon theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+          <svg class="svg-icon theme-icon-light hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </button>
+
         <div id="userProfileBadge" class="user-pill hidden" title="Ver mi información y perfil">
           <div class="user-avatar-mini" id="userAvatarText">AD</div>
           <div class="user-pill-info">
@@ -285,6 +305,7 @@
                   <select id="regRole" class="form-select">
                     <option value="STUDENT">Estudiante (Alumno)</option>
                     <option value="TEACHER">Docente (Profesor)</option>
+                    <option value="ADMIN">Personal Administrativo / Directivo</option>
                   </select>
                 </div>
                 <div class="form-group">
@@ -324,6 +345,36 @@
                   Departamento / Facultad
                 </label>
                 <input type="text" id="regDepartment" placeholder="Ej. Ciencias Computacionales">
+              </div>
+
+              <div class="form-group hidden" id="groupAdminFields">
+                <label for="regAdminPosition">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                  Cargo / Dependencia Administrativa
+                </label>
+                <input type="text" id="regAdminPosition" placeholder="Ej. Rectoría, Coordinación Académica, Registro y Control">
+              </div>
+
+              <div class="form-group hidden" id="groupInstitutionalKey">
+                <label for="regInstitutionalKey">
+                  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  Clave de Autorización Institucional
+                </label>
+                <input type="password" id="regInstitutionalKey" placeholder="Código de validación docente o directivo">
+                <small class="field-hint field-hint-block">
+                  <svg class="svg-icon svg-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Obligatorio para docentes y directivos. Previene la suplantación de cargos y el acceso no autorizado.
+                </small>
               </div>
 
               <button type="submit" class="btn btn-primary btn-block btn-lg" id="btnRegisterSubmit">
@@ -1465,36 +1516,312 @@
             </form>
           </div>
 
-          <!-- Card 3: Zona de Peligro - Eliminación Definitiva de Cuenta -->
-          <div class="glass-card profile-danger-card">
+          <!-- Card 3: Zona de Seguridad - Desactivación de Cuenta (Modo Apagado) -->
+          <div class="glass-card profile-danger-card" id="profileDangerSection">
             <div class="danger-header">
               <div class="danger-icon">
-                <svg class="svg-icon" style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none"
+                <svg class="svg-icon svg-icon-md" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                  <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                  <line x1="12" y1="2" x2="12" y2="12" />
                 </svg>
               </div>
               <div>
-                <h3 class="danger-title">Zona de Peligro — Eliminar Cuenta Definitivamente</h3>
+                <h3 class="danger-title">Zona de Cuenta — Desactivar Cuenta (Modo Apagado)</h3>
                 <p class="danger-desc">
-                  Al eliminar tu cuenta, todos tus datos personales, accesos, registros de perfil y credenciales se
-                  borrarán permanentemente del sistema. Esta acción es <strong>definitiva e irreversible</strong>.
+                  Al desactivar tu cuenta, esta pasará al modo de reposo ('apagado') y tus sesiones activas se cerrarán. Tu historial académico, notas y asistencias permanecerán resguardados. Podrás reactivar tu cuenta en cualquier momento volviendo a iniciar sesión con tu correo y contraseña.
                 </p>
               </div>
             </div>
             <div class="danger-actions">
-              <button type="button" class="btn btn-danger" id="btnOpenDeleteAccountModal">
+              <button type="button" class="btn btn-secondary btn-danger-outline" id="btnOpenDeleteAccountModal">
                 <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                  <line x1="12" y1="2" x2="12" y2="12" />
                 </svg>
-                <span>Eliminar mi Cuenta Definitivamente</span>
+                <span>Desactivar mi Cuenta (Modo Apagado)</span>
               </button>
             </div>
           </div>
 
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 6: MASTER DEVELOPER / SUPERADMIN CONTROL CONSOLE ================= -->
+    <section id="viewMasterDev" class="view-section hidden">
+      <div class="section-header-flex">
+        <div>
+          <span class="badge-role superadmin">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 17 10 11 4 5"></polyline>
+              <line x1="12" y1="19" x2="20" y2="19"></line>
+            </svg>
+            Programador General • SuperAdmin Master
+          </span>
+          <h1 class="view-title">Consola de Control Total & Dominio del Sistema</h1>
+          <p class="view-subtitle">Cobertura absoluta y confidencial. Monitoreo de base de datos MySQL, gestión de cuentas, llaves institucionales y auditoría forense.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary btn-sm" id="btnDevOpenCreateUser">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="19" y1="8" x2="19" y2="14" />
+              <line x1="22" y1="11" x2="16" y2="11" />
+            </svg>
+            Crear Usuario / Directivo
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btnRefreshMasterDevData">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+              <path d="M16 21h5v-5" />
+            </svg>
+            Sincronizar Telemetría
+          </button>
+        </div>
+      </div>
+
+      <!-- Master Dev Metrics Bento Grid -->
+      <div class="metrics-grid" id="devMetricsGrid">
+        <div class="metric-card glass-card">
+          <div class="metric-icon purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+            </svg>
+          </div>
+          <div class="metric-data">
+            <span class="metric-label">Base de Datos MySQL</span>
+            <h3 class="metric-value" id="statDevDbStatus">Conectado</h3>
+            <span class="metric-tag" id="statDevTablesTotal">- tablas activas</span>
+          </div>
+        </div>
+
+        <div class="metric-card glass-card">
+          <div class="metric-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <div class="metric-data">
+            <span class="metric-label">Cuentas Registradas</span>
+            <h3 class="metric-value" id="statDevTotalUsers">-</h3>
+            <span class="metric-tag" id="statDevUsersBreakdown">- docentes • - alumnos</span>
+          </div>
+        </div>
+
+        <div class="metric-card glass-card">
+          <div class="metric-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="m9 12 2 2 4-4"></path>
+            </svg>
+          </div>
+          <div class="metric-data">
+            <span class="metric-label">Control Institucional</span>
+            <h3 class="metric-value metric-value-compact" id="statDevActiveKey">PROTEGIDO</h3>
+            <span class="metric-tag">Filtro Anti-Suplantación Activo</span>
+          </div>
+        </div>
+
+        <div class="metric-card glass-card">
+          <div class="metric-icon yellow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <div class="metric-data">
+            <span class="metric-label">Trazabilidad & Auditoría</span>
+            <h3 class="metric-value" id="statDevAuditCount">-</h3>
+            <span class="metric-tag">Eventos forenses registrados</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Master Dev Tabs Navigation -->
+      <div class="admin-tabs-nav tabs-nav-spaced">
+        <button class="tab-btn active" id="btnDevTabUsers">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+          </svg>
+          <span>Gestión de Cuentas & Usuarios</span>
+        </button>
+        <button class="tab-btn" id="btnDevTabSecurity">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          <span>Llaves Institucionales & Jerarquía</span>
+        </button>
+        <button class="tab-btn" id="btnDevTabDb">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+          </svg>
+          <span>Estructura de Base de Datos MySQL</span>
+        </button>
+      </div>
+
+      <!-- Tab Content 1: User Management -->
+      <div id="tabDevUsers" class="tab-panel active">
+        <div class="panel-header-actions">
+          <div>
+            <h3>Directorio Universal de Cuentas (SuperAdmin)</h3>
+            <p class="subtitle-text">Modifica roles, activa o suspende accesos, restablece credenciales y purga cuentas no autorizadas.</p>
+          </div>
+          <div class="filter-group-dev">
+            <input type="text" id="inputSearchDevUsers" class="form-input-sm input-search-dev" placeholder="Buscar por nombre, correo o teléfono...">
+            <select id="selectFilterDevRole" class="form-select-sm">
+              <option value="ALL">Todos los Roles</option>
+              <option value="SUPERADMIN">SuperAdmin</option>
+              <option value="ADMIN">Administrador</option>
+              <option value="TEACHER">Docente</option>
+              <option value="STUDENT">Estudiante</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-container glass-card">
+          <table class="academic-table" id="tableDevUsers">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Usuario</th>
+                <th>Contacto & Teléfono</th>
+                <th>Rol</th>
+                <th>Código / Perfil</th>
+                <th>Estado</th>
+                <th>Fecha Registro</th>
+                <th>Acciones de Maestro</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab Content 2: Institutional Security Keys -->
+      <div id="tabDevSecurity" class="tab-panel hidden">
+        <div class="profile-cards-grid dev-security-grid">
+          <div class="glass-card">
+            <div class="card-header-styled">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <h3>Llave de Autorización para Docentes</h3>
+            </div>
+            <p class="dev-card-desc">
+              Código secreto que debe ingresar un profesor al momento de crear su cuenta para evitar que cualquier visitante o estudiante se otorgue a sí mismo privilegios de calificar o crear asignaturas.
+            </p>
+            <div class="dev-key-box">
+              <span class="dev-key-label">Clave Configurada en .env:</span>
+              <div class="dev-key-value dev-key-value-blue" id="devDisplayTeacherKey">
+                NEXUS-DOCENTE-AUTH-2026
+              </div>
+            </div>
+            <small class="dev-key-hint">Para cambiar esta llave, edite <code>TEACHER_REGISTRATION_KEY</code> en el archivo <code>.env</code>.</small>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-header-styled">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+              <h3>Llave de Autorización Administrativa</h3>
+            </div>
+            <p class="dev-card-desc">
+              Código de seguridad requerido para dar de alta directivos, coordinadores o personal de rectoría en la institución.
+            </p>
+            <div class="dev-key-box">
+              <span class="dev-key-label">Clave Administrativa en .env:</span>
+              <div class="dev-key-value dev-key-value-purple" id="devDisplayAdminKey">
+                NEXUS-ADMIN-MASTER-2026
+              </div>
+            </div>
+            <small class="dev-key-hint">Para cambiar esta llave, edite <code>ADMIN_REGISTRATION_KEY</code> en el archivo <code>.env</code>.</small>
+          </div>
+        </div>
+
+        <div class="glass-card dev-hierarchy-card">
+          <h3 class="dev-hierarchy-title"><i class="fa-solid fa-sitemap"></i> Matriz de Jerarquía de Acceso & Alcance Institucional</h3>
+          <div class="table-container">
+            <table class="academic-table">
+              <thead>
+                <tr>
+                  <th>Rol / Cargo</th>
+                  <th>Alcance de Visualización</th>
+                  <th>Privilegios de Escritura</th>
+                  <th>Método de Validación Anti-Suplantación</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge-role superadmin">SUPERADMIN / Programador</span></td>
+                  <td>100% Cobertura Total de la plataforma, logs, usuarios y BD</td>
+                  <td>Edición total de usuarios, roles, estados y configuración</td>
+                  <td>Credenciales confidenciales en <code>.env</code> (no transmitibles)</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-role admin">DIRECTIVO / Rector / Coordinador</span></td>
+                  <td>Toda la institución: todos los cursos, grupos, docentes y alumnos</td>
+                  <td>Creación de asignaturas, apertura de grupos y asignación docente</td>
+                  <td>Clave de Seguridad Administrativa Institucional</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-role teacher">DOCENTE / Profesor</span></td>
+                  <td>Estrictamente sus asignaturas asignadas y sus propios alumnos</td>
+                  <td>Registro y edición de calificaciones, sesiones y asistencia QR</td>
+                  <td>Clave de Autorización Docente requerida en el registro</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-role student">ESTUDIANTE / Alumno</span></td>
+                  <td>Estrictamente sus propias notas, asistencias y catálogo de cursos</td>
+                  <td>Auto-matrícula en asignaturas abiertas y escaneo de asistencia</td>
+                  <td>Correo institucional único + Teléfono único + Código de matrícula</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-role external">PERSONA EXTERNA</span></td>
+                  <td>Solo formulario de registro e inicio de sesión público</td>
+                  <td>Ninguno (Bloqueo por barrera de autenticación y llaves)</td>
+                  <td>Filtro perimetral Zero-Trust</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content 3: MySQL Database Inspector -->
+      <div id="tabDevDb" class="tab-panel hidden">
+        <div class="panel-header-actions">
+          <div>
+            <h3>Monitor de Tablas Relacionales MySQL (nexusacademic)</h3>
+            <p class="subtitle-text">Inspección de integridad de datos y volumen de registros en tiempo real.</p>
+          </div>
+          <a href="http://localhost/phpmyadmin/index.php?route=/database/structure&db=nexusacademic" target="_blank" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-database"></i> Abrir phpMyAdmin
+          </a>
+        </div>
+        <div class="table-container glass-card">
+          <table class="academic-table" id="tableDevDbRows">
+            <thead>
+              <tr>
+                <th>Tabla Relacional</th>
+                <th>Propósito en NexusAcademic</th>
+                <th>Total de Registros</th>
+                <th>Estado de Integridad</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -1873,7 +2200,7 @@
         </div>
       </div>
 
-      <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center;">
+      <div class="fs-actions-row">
         <button class="btn btn-secondary btn-lg" id="btnCloseFullscreenQR">
           <i class="fa-solid fa-compress"></i> Salir del Modo Proyector (ESC)
         </button>
@@ -1887,7 +2214,7 @@
       <div class="modal-header">
         <div class="modal-title danger-modal-title">
           <i class="fa-solid fa-triangle-exclamation"></i>
-          <h3>Eliminar Cuenta Definitivamente</h3>
+          <h3>Desactivar Cuenta (Modo Apagado)</h3>
         </div>
         <button class="btn-close-modal" id="btnCloseDeleteAccountModal">&times;</button>
       </div>
@@ -1896,40 +2223,171 @@
         <div class="modal-alert-box-danger">
           <i class="fa-solid fa-triangle-exclamation"></i>
           <div>
-            <strong>¡Atención: Acción Destructiva e Irreversible!</strong>
-            <p>Se borrará permanentemente tu usuario en NexusAcademic. No podrás volver a ingresar con este correo ni
-              recuperar tu información académica asociada.</p>
+            <strong>¡Atención: Suspensión Segura en Modo Apagado!</strong>
+            <p>Tu cuenta pasará a estado inactivo y tus sesiones se cerrarán. Tus registros académicos se conservarán íntegros y podrás reactivarla iniciando sesión nuevamente.</p>
           </div>
         </div>
 
-        <div class="form-group" style="margin-top: 1.25rem;">
+        <div class="form-group form-group-mt">
           <label for="inputDeletePassword"><i class="fa-solid fa-lock"></i> Introduce tu contraseña actual para
             confirmar:</label>
           <input type="password" id="inputDeletePassword" placeholder="••••••••" required
             autocomplete="current-password">
         </div>
 
-        <div class="form-group" style="margin-bottom: 1.5rem;">
-          <label class="checkbox-container"
-            style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; font-size: 0.9rem; color: var(--text-muted);">
-            <input type="checkbox" id="checkConfirmDelete" required
-              style="margin-top: 0.2rem; cursor: pointer; width: 1.1rem; height: 1.1rem;">
-            <span>Entiendo que esta acción borrará permanentemente mi usuario y no se podrá deshacer.</span>
+        <div class="form-group form-group-mb">
+          <label class="checkbox-container checkbox-label-flex">
+            <input type="checkbox" id="checkConfirmDelete" required class="checkbox-input-lg">
+            <span>Entiendo que mi cuenta se colocará en modo apagado (suspendida) y que podré reactivarla al volver a iniciar sesión con mi contraseña.</span>
           </label>
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn btn-glass" id="btnCancelDeleteAccount">Cancelar y Conservar Cuenta</button>
-          <button type="submit" class="btn btn-danger" id="btnConfirmDelete">
-            <i class="fa-solid fa-trash-can"></i> Sí, Eliminar mi Cuenta
+          <button type="button" class="btn btn-glass" id="btnCancelDeleteAccount">Cancelar</button>
+          <button type="submit" class="btn btn-warning btn-warning-solid" id="btnConfirmDelete">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+              <line x1="12" y1="2" x2="12" y2="12" />
+            </svg>
+            Confirmar Desactivación (Modo Apagado)
           </button>
         </div>
       </form>
     </div>
   </div>
 
+  <!-- Modal 8: SuperAdmin Edit User & Reset Password -->
+  <div class="modal-overlay hidden" id="modalDevEditUser">
+    <div class="modal-box glass-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-user-gear"></i>
+          <h3 id="modalDevEditUserTitle">Administrar Cuenta de Usuario</h3>
+        </div>
+        <button class="btn-close-modal" id="btnCloseDevEditUserModal">&times;</button>
+      </div>
+
+      <form id="formDevEditUser" class="modal-form">
+        <input type="hidden" id="devEditUserId">
+
+        <div class="form-group">
+          <label>Usuario Seleccionado:</label>
+          <div class="dev-user-summary-name" id="devEditUserName">-</div>
+          <small class="dev-user-summary-email" id="devEditUserEmail">-</small>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="devEditUserRole">Rol en el Sistema</label>
+            <select id="devEditUserRole" class="form-select">
+              <option value="STUDENT">Estudiante</option>
+              <option value="TEACHER">Docente</option>
+              <option value="ADMIN">Administrador</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="devEditUserStatus">Estado de Acceso</label>
+            <select id="devEditUserStatus" class="form-select">
+              <option value="ACTIVE">Activo (Con Acceso)</option>
+              <option value="INACTIVE">Suspendido / Bloqueado</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group form-group-divider">
+          <label for="devEditNewPass">
+            <i class="fa-solid fa-key"></i> Restablecer Contraseña (Opcional):
+          </label>
+          <input type="text" id="devEditNewPass" placeholder="Dejar vacío para mantener la actual o ingresar nueva">
+          <small class="dev-key-hint">Si ingresa un valor, la contraseña del usuario será sustituida de inmediato.</small>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-glass" id="btnCancelDevEditUser">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveDevEditUser">Guardar Cambios Maestros</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 9: SuperAdmin / Master Dev Create User -->
+  <div class="modal-overlay hidden" id="modalDevCreateUser">
+    <div class="modal-box glass-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <line x1="19" y1="8" x2="19" y2="14" />
+            <line x1="22" y1="11" x2="16" y2="11" />
+          </svg>
+          <h3>Crear Usuario Institucional / Directivo</h3>
+        </div>
+        <button class="btn-close-modal" id="btnCloseDevCreateUserModal">&times;</button>
+      </div>
+
+      <form id="formDevCreateUser" class="modal-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="devNewFirstName">Nombres</label>
+            <input type="text" id="devNewFirstName" placeholder="Ej. Carlos Eduardo" required>
+          </div>
+          <div class="form-group">
+            <label for="devNewLastName">Apellidos</label>
+            <input type="text" id="devNewLastName" placeholder="Ej. Gómez Silva" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="devNewEmail">Correo Institucional</label>
+            <input type="email" id="devNewEmail" placeholder="directivo@nexus.edu" required>
+          </div>
+          <div class="form-group">
+            <label for="devNewPhone">Teléfono Móvil (Único)</label>
+            <input type="tel" id="devNewPhone" placeholder="+57 300 123 4567" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="devNewRole">Rol Asignado</label>
+            <select id="devNewRole" class="form-select">
+              <option value="ADMIN">Directivo / Rector / Supervisor / Admin</option>
+              <option value="TEACHER">Docente / Profesor</option>
+              <option value="STUDENT">Estudiante</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="devNewPassword">Contraseña Inicial</label>
+            <input type="text" id="devNewPassword" placeholder="Mínimo 6 caracteres" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="devNewCode">Código Personal / Institucional (Opcional)</label>
+            <input type="text" id="devNewCode" placeholder="Ej. REC-001, DOC-405, EST-2026-001">
+          </div>
+          <div class="form-group">
+            <label for="devNewDeptCareer">Departamento, Facultad o Cargo</label>
+            <input type="text" id="devNewDeptCareer" placeholder="Ej. Rectoría General, Coordinación Académica...">
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-glass" id="btnCancelDevCreateUser">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitDevCreateUser">Dar de Alta Usuario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Navigation Bar (Thumb-Zone Ergonomics) -->
+  <nav class="mobile-bottom-nav hidden" id="mobileBottomNav" aria-label="Navegación móvil inferior"></nav>
+
   <!-- Toast Notification System -->
-  <div class="toast-container" id="toastContainer"></div>
+  <div class="toast-container" id="toastContainer" role="status" aria-live="polite"></div>
 
   <!-- Footer -->
   <footer class="footer">
@@ -1939,8 +2397,7 @@
         <span>NexusAcademic Enterprise • Sistema Integral de Gestión Académica & Asistencia QR</span>
       </div>
       <p class="footer-copy">
-        © 2026 NexusAcademic Platform. Diseñado con Vanilla CSS Glassmorphism, SQLite Transaccional & Node.js ES
-        Modules.
+        © 2026 NexusAcademic Platform. Arquitectura Limpia PHP 8.2+, MySQL/MariaDB Transaccional & Criptografía Dinámica HMAC-SHA256.
       </p>
     </div>
   </footer>

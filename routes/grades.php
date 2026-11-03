@@ -36,6 +36,11 @@ $router->group('grades', function (Router $r) {
         RbacMiddleware::handle('TEACHER', 'ADMIN')
     ]);
 
+    $r->post('record', [GradeController::class, 'saveGrade'], [
+        AuthMiddleware::handle(),
+        RbacMiddleware::handle('TEACHER', 'ADMIN')
+    ]);
+
     $r->post('batch', [GradeController::class, 'saveBatchGrades'], [
         AuthMiddleware::handle(),
         RbacMiddleware::handle('TEACHER', 'ADMIN')
@@ -52,6 +57,10 @@ $router->group('grades', function (Router $r) {
     ]);
 
     $r->get('{id:\d+}/history', [GradeController::class, 'getGradeAuditHistory'], [
+        AuthMiddleware::handle()
+    ]);
+
+    $r->get('history/{id:\d+}', [GradeController::class, 'getGradeAuditHistory'], [
         AuthMiddleware::handle()
     ]);
 });

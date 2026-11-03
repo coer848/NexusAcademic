@@ -121,6 +121,13 @@ class CryptoService {
     }
 
     /**
+     * Generate a cryptographically secure 64-hex-character session secret
+     */
+    public static function generateSessionSecret(): string {
+        return bin2hex(random_bytes(32));
+    }
+
+    /**
      * Generate dynamic QR payload with HMAC signature and 20-second rotation window
      */
     public static function generateQRPayload($sessionId, string $sessionSecret): array {

@@ -48,11 +48,13 @@ class GradeService {
             }
 
             $details[] = [
+                'gradeId'      => isset($gradeObj['id']) ? (int)$gradeObj['id'] : null,
                 'evaluationId' => $evId,
                 'name'         => $ev['name'],
                 'type'         => $ev['type'],
                 'weight'       => $evWeight,
                 'maxScore'     => (float)($ev['max_score'] ?? 5.0),
+                'dueDate'      => $ev['due_date'] ?? null,
                 'score'        => $score,
                 'feedback'     => $gradeObj['feedback'] ?? null,
                 'updatedAt'    => $gradeObj['updated_at'] ?? null,
@@ -126,6 +128,14 @@ class GradeService {
             'currentTotal'   => round($currentTotalWeight, 2),
             'projectedTotal' => round($total, 2)
         ];
+    }
+
+    /**
+     * Boolean helper used by GradeController for score boundary validation
+     */
+    public static function isValidScore($score, float $minGrade = 0.0, float $maxGrade = 5.0): bool {
+        $check = self::validateScoreBounds($score, $minGrade, $maxGrade);
+        return !empty($check['valid']);
     }
 
     /**

@@ -21,12 +21,23 @@ class Response {
     }
 
     /**
+     * Check if an array is associative (not a flat numerical list)
+     * Compatible with all PHP versions (PHP 7.4, 8.0, 8.1, 8.2+)
+     */
+    private static function isAssociativeArray(array $arr): bool {
+        if ($arr === []) {
+            return false;
+        }
+        return array_keys($arr) !== range(0, count($arr) - 1);
+    }
+
+    /**
      * Send standard success response
      */
     public static function success($data = null, string $message = 'Operación exitosa', int $statusCode = 200): void {
         $payload = ['success' => true, 'message' => $message];
         if ($data !== null) {
-            if (is_array($data) && !array_is_list($data)) {
+            if (is_array($data) && self::isAssociativeArray($data)) {
                 $payload = array_merge($payload, $data);
             } else {
                 $payload['data'] = $data;
@@ -45,7 +56,8 @@ class Response {
     /**
      * Send standard error response
      */
-    public static function error(string $message, string $errorCode = 'BAD_REQUEST', int $statusCode = 400, ?array $details = null): void {
+    public static function error(string $message, string $errorCode = 'BAD_REQUEST', $statusCode = 400, ?array $details = null): void {
+        $code = (is_numeric($statusCode) && (int)$statusCode >= 400 && (int)$statusCode < 600) ? (int)$statusCode : 400;
         $payload = [
             'success' => false,
             'error'   => $errorCode,
@@ -54,7 +66,7 @@ class Response {
         if ($details !== null) {
             $payload['details'] = $details;
         }
-        self::json($payload, $statusCode);
+        self::json($payload, $code);
     }
 
     /**

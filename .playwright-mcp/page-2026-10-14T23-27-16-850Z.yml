@@ -1,0 +1,121 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4] [cursor=pointer]: NexusAcademic
+      - navigation [ref=e171]:
+        - button " Consola Master" [ref=e172] [cursor=pointer]:
+          - generic [ref=e173]: 
+          - text: Consola Master
+        - button " Panel Admin" [ref=e174] [cursor=pointer]:
+          - generic [ref=e175]: 
+          - text: Panel Admin
+        - button " Mi Perfil" [active] [ref=e176] [cursor=pointer]:
+          - generic [ref=e177]: 
+          - text: Mi Perfil
+      - generic [ref=e12]:
+        - generic "Hora Oficial del Campus - Sincronizada" [ref=e13]:
+          - generic [ref=e18]:
+            - generic [ref=e19]: 06:27:13 p. m.
+            - generic [ref=e20]: Mié, 14 oct 2026
+        - button "Alternar tema" [ref=e21] [cursor=pointer]
+        - generic "Ver mi información y perfil" [ref=e178] [cursor=pointer]:
+          - generic [ref=e179]: MD
+          - generic [ref=e180]:
+            - generic [ref=e181]: Master Developer
+            - generic [ref=e182]: MASTER DEV
+          - button "Cerrar Sesión" [ref=e183]
+  - main [ref=e28]:
+    - text: +  +          +           
+    - generic [ref=e424]:
+      - generic [ref=e425]:
+        - generic [ref=e426]:
+          - generic [ref=e427]: Perfil Institucional
+          - heading "Mi Perfil & Datos de Cuenta" [level=1] [ref=e430]
+          - paragraph [ref=e431]: Consulta y actualiza tu información registrada, credenciales y opciones de cuenta.
+        - button "Actualizar Perfil" [ref=e433] [cursor=pointer]
+      - generic [ref=e439]:
+        - generic [ref=e441]:
+          - generic [ref=e442]:
+            - generic [ref=e443]: MD
+            - generic "Cuenta Activa" [ref=e444]
+          - heading "Master Developer" [level=2] [ref=e445]
+          - paragraph [ref=e446]: master@nexusacademic.dev
+          - generic [ref=e447]: ESTUDIANTE
+          - separator [ref=e448]
+          - generic [ref=e449]:
+            - generic [ref=e450]:
+              - generic [ref=e451]: Teléfono Móvil
+              - generic [ref=e455]: "+573000000000"
+            - generic [ref=e456]:
+              - generic [ref=e457]: ID de Usuario
+              - generic [ref=e461]: "#10"
+            - generic [ref=e462]:
+              - generic [ref=e463]: Estado de Cuenta
+              - generic [ref=e468]: ACTIVO
+            - generic [ref=e469]:
+              - generic [ref=e470]: Miembro Desde
+              - generic [ref=e475]: Registrado
+          - generic [ref=e476]:
+            - heading " Privilegios de Sistema" [level=4] [ref=e477]:
+              - generic [ref=e478]: 
+              - text: Privilegios de Sistema
+            - generic [ref=e479]:
+              - generic [ref=e480]:
+                - generic [ref=e481]: "Nivel de Acceso:"
+                - strong [ref=e482]: Master Developer / Superadmin
+              - generic [ref=e483]:
+                - generic [ref=e484]: "Control Criptográfico:"
+                - strong [ref=e485]: Activo & Habilitado
+              - generic [ref=e486]:
+                - generic [ref=e487]: "Auditoría de Acciones:"
+                - strong [ref=e488]: Inmutable en Base de Datos
+        - generic [ref=e489]:
+          - generic [ref=e490]:
+            - generic [ref=e497]:
+              - heading "Información de Contacto y Datos Personales" [level=3] [ref=e498]
+              - paragraph [ref=e499]: Modifica tu nombre, teléfono y datos de tu registro institucional.
+            - generic [ref=e500]:
+              - generic [ref=e501]:
+                - generic [ref=e502]:
+                  - generic [ref=e503]: Nombre
+                  - textbox "Nombre" [ref=e507]:
+                    - /placeholder: Tu nombre
+                    - text: Master
+                - generic [ref=e508]:
+                  - generic [ref=e509]: Apellido
+                  - textbox "Apellido" [ref=e510]:
+                    - /placeholder: Tu apellido
+                    - text: Developer
+              - generic [ref=e511]:
+                - generic [ref=e512]:
+                  - generic [ref=e513]: Correo Electrónico (Institucional)
+                  - textbox "Correo Electrónico (Institucional)" [disabled] [ref=e517]: master@nexusacademic.dev
+                - generic [ref=e518]:
+                  - generic [ref=e519]: Número Telefónico / Móvil
+                  - textbox "Número Telefónico / Móvil" [ref=e522]:
+                    - /placeholder: Ej. +57 300 123 4567
+                    - text: "+573000000000"
+              - button "Guardar Cambios en mi Perfil" [ref=e524] [cursor=pointer]
+          - generic [ref=e530]:
+            - generic [ref=e535]:
+              - heading "Seguridad & Cambio de Contraseña" [level=3] [ref=e536]
+              - paragraph [ref=e537]: Protege tu cuenta actualizando tu contraseña periódicamente.
+            - generic [ref=e538]:
+              - generic [ref=e539]:
+                - generic [ref=e540]:
+                  - generic [ref=e541]: Contraseña Actual
+                  - textbox "Contraseña Actual" [ref=e545]:
+                    - /placeholder: ••••••••
+                - generic [ref=e546]:
+                  - generic [ref=e547]: Nueva Contraseña (mínimo 6 caracteres)
+                  - textbox "Nueva Contraseña (mínimo 6 caracteres)" [ref=e550]:
+                    - /placeholder: ••••••••
+              - button "Actualizar Contraseña" [ref=e552] [cursor=pointer]
+    - text:                     
+  - text:                   
+  - contentinfo [ref=e77]:
+    - generic [ref=e78]:
+      - generic [ref=e79]:
+        - generic [ref=e80]: 
+        - generic [ref=e81]: NexusAcademic Enterprise • Sistema Integral de Gestión Académica & Asistencia QR
+      - paragraph [ref=e82]: © 2026 NexusAcademic Platform. Diseñado con Vanilla CSS Glassmorphism, SQLite Transaccional & Node.js ES Modules.

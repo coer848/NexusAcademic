@@ -1,0 +1,233 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4] [cursor=pointer]: NexusAcademic
+      - navigation [ref=e171]:
+        - button " Consola Master" [ref=e172] [cursor=pointer]:
+          - generic [ref=e173]: 
+          - text: Consola Master
+        - button " Panel Admin" [ref=e174] [cursor=pointer]:
+          - generic [ref=e175]: 
+          - text: Panel Admin
+        - button " Mi Perfil" [ref=e176] [cursor=pointer]:
+          - generic [ref=e177]: 
+          - text: Mi Perfil
+      - generic [ref=e12]:
+        - generic "Hora Oficial del Campus - Sincronizada" [ref=e13]:
+          - generic [ref=e18]:
+            - generic [ref=e19]: 06:24:26 p. m.
+            - generic [ref=e20]: Mié, 14 oct 2026
+        - button "Alternar tema" [ref=e21] [cursor=pointer]
+        - generic "Ver mi información y perfil" [ref=e178] [cursor=pointer]:
+          - generic [ref=e179]: MD
+          - generic [ref=e180]:
+            - generic [ref=e181]: Master Developer
+            - generic [ref=e182]: MASTER DEV
+          - button "Cerrar Sesión" [ref=e183]
+  - main [ref=e28]:
+    - text: +  +          +           
+    - generic [ref=e187]:
+      - generic [ref=e188]:
+        - generic [ref=e189]:
+          - generic [ref=e190]: Programador General • SuperAdmin Master
+          - heading "Consola de Control Total & Dominio del Sistema" [level=1] [ref=e193]
+          - paragraph [ref=e194]: Cobertura absoluta y confidencial. Monitoreo de base de datos MySQL, gestión de cuentas, llaves institucionales y auditoría forense.
+        - generic [ref=e195]:
+          - button "Crear Usuario / Directivo" [ref=e196] [cursor=pointer]
+          - button "Sincronizar Telemetría" [ref=e200] [cursor=pointer]
+      - generic [ref=e206]:
+        - generic [ref=e213]:
+          - generic [ref=e214]: Base de Datos MySQL
+          - heading "Conectado" [level=3] [ref=e215]
+          - generic [ref=e216]: 13 tablas relacionales (MySQL)
+        - generic [ref=e224]:
+          - generic [ref=e225]: Cuentas Registradas
+          - heading "6" [level=3] [ref=e226]
+          - generic [ref=e227]: 3 docentes • 2 alumnos • 0 directivos
+        - generic [ref=e233]:
+          - generic [ref=e234]: Control Institucional
+          - heading "NEXUS-DOCENTE-AUTH-2026" [level=3] [ref=e235]
+          - generic [ref=e236]: Filtro Anti-Suplantación Activo
+        - generic [ref=e241]:
+          - generic [ref=e242]: Trazabilidad & Auditoría
+          - heading "46" [level=3] [ref=e243]
+          - generic [ref=e244]: Eventos forenses registrados
+      - generic [ref=e245]:
+        - button "Gestión de Cuentas & Usuarios" [ref=e246] [cursor=pointer]
+        - button "Llaves Institucionales & Jerarquía" [ref=e251] [cursor=pointer]
+        - button "Estructura de Base de Datos MySQL" [ref=e256] [cursor=pointer]
+      - generic [ref=e262]:
+        - generic [ref=e263]:
+          - generic [ref=e264]:
+            - heading "Directorio Universal de Cuentas (SuperAdmin)" [level=3] [ref=e265]
+            - paragraph [ref=e266]: Modifica roles, activa o suspende accesos, restablece credenciales y purga cuentas no autorizadas.
+          - generic [ref=e267]:
+            - textbox "Buscar por nombre, correo o teléfono..." [ref=e268]
+            - combobox [ref=e269]:
+              - option "Todos los Roles" [selected]
+              - option "SuperAdmin"
+              - option "Administrador"
+              - option "Docente"
+              - option "Estudiante"
+        - table [ref=e271]:
+          - rowgroup [ref=e272]:
+            - row [ref=e273]:
+              - columnheader "ID" [ref=e274]
+              - columnheader "Usuario" [ref=e275]
+              - columnheader "Contacto & Teléfono" [ref=e276]
+              - columnheader "Rol" [ref=e277]
+              - columnheader "Código / Perfil" [ref=e278]
+              - columnheader "Estado" [ref=e279]
+              - columnheader "Fecha Registro" [ref=e280]
+              - columnheader "Acciones de Maestro" [ref=e281]
+          - rowgroup [ref=e282]:
+            - row [ref=e283]:
+              - cell [ref=e284]:
+                - code [ref=e285]: "#11"
+              - cell "Gabriel Correa gabrieljaimecorreacorrea22@gmail.com" [ref=e286]:
+                - generic [ref=e287]: Gabriel Correa
+                - text: gabrieljaimecorreacorrea22@gmail.com
+              - cell " +573106237817" [ref=e288]:
+                - generic [ref=e289]:
+                  - generic [ref=e290]: 
+                  - text: "+573106237817"
+              - cell "TEACHER" [ref=e291]
+              - cell [ref=e293]:
+                - generic [ref=e294]:
+                  - code [ref=e295]: "00000"
+                  - text: • ingeniero de sistemas
+              - cell "ACTIVE" [ref=e296]
+              - cell "14/10/2026" [ref=e299]
+              - cell [ref=e300]:
+                - generic [ref=e301]:
+                  - button " Suspender" [ref=e302] [cursor=pointer]:
+                    - generic [ref=e303]: 
+                    - text: Suspender
+                  - button " Editar" [ref=e304] [cursor=pointer]:
+                    - generic [ref=e305]: 
+                    - text: Editar
+                  - button "" [ref=e306] [cursor=pointer]
+            - row [ref=e308]:
+              - cell [ref=e309]:
+                - code [ref=e310]: "#10"
+              - cell "Master Developer master@nexusacademic.dev" [ref=e311]:
+                - generic [ref=e312]: Master Developer
+                - text: master@nexusacademic.dev
+              - cell " +573000000000" [ref=e313]:
+                - generic [ref=e314]:
+                  - generic [ref=e315]: 
+                  - text: "+573000000000"
+              - cell "SUPERADMIN" [ref=e316]
+              - cell "Programador del Sistema" [ref=e318]
+              - cell "ACTIVE" [ref=e319]
+              - cell "14/10/2026" [ref=e322]
+              - cell " Master Dev" [ref=e323]:
+                - generic [ref=e325]:
+                  - generic [ref=e326]: 
+                  - text: Master Dev
+            - row [ref=e327]:
+              - cell [ref=e328]:
+                - code [ref=e329]: "#8"
+              - cell "Gabriel Correa gabrieljaimecorreacorrea2@gmail.com" [ref=e330]:
+                - generic [ref=e331]: Gabriel Correa
+                - text: gabrieljaimecorreacorrea2@gmail.com
+              - cell " +573106227219" [ref=e332]:
+                - generic [ref=e333]:
+                  - generic [ref=e334]: 
+                  - text: "+573106227219"
+              - cell "STUDENT" [ref=e335]
+              - cell [ref=e337]:
+                - generic [ref=e338]:
+                  - code [ref=e339]: "00000"
+                  - text: • Ingeniería de Software (Sem 1)
+              - cell "ACTIVE" [ref=e340]
+              - cell "14/10/2026" [ref=e343]
+              - cell [ref=e344]:
+                - generic [ref=e345]:
+                  - button " Suspender" [ref=e346] [cursor=pointer]:
+                    - generic [ref=e347]: 
+                    - text: Suspender
+                  - button " Editar" [ref=e348] [cursor=pointer]:
+                    - generic [ref=e349]: 
+                    - text: Editar
+                  - button "" [ref=e350] [cursor=pointer]
+            - row [ref=e352]:
+              - cell [ref=e353]:
+                - code [ref=e354]: "#7"
+              - cell "Alejandro Vega estudiante.alejandro@nexus.edu" [ref=e355]:
+                - generic [ref=e356]: Alejandro Vega
+                - text: estudiante.alejandro@nexus.edu
+              - cell "Sin teléfono" [ref=e357]
+              - cell "STUDENT" [ref=e358]
+              - cell [ref=e360]:
+                - generic [ref=e361]:
+                  - code [ref=e362]: EST-2026-04
+                  - text: • Ciberseguridad y Redes (Sem 5)
+              - cell "ACTIVE" [ref=e363]
+              - cell "14/10/2026" [ref=e366]
+              - cell [ref=e367]:
+                - generic [ref=e368]:
+                  - button " Suspender" [ref=e369] [cursor=pointer]:
+                    - generic [ref=e370]: 
+                    - text: Suspender
+                  - button " Editar" [ref=e371] [cursor=pointer]:
+                    - generic [ref=e372]: 
+                    - text: Editar
+                  - button "" [ref=e373] [cursor=pointer]
+            - row [ref=e375]:
+              - cell [ref=e376]:
+                - code [ref=e377]: "#3"
+              - cell "Elena Ramos prof.elena@nexus.edu" [ref=e378]:
+                - generic [ref=e379]: Elena Ramos
+                - text: prof.elena@nexus.edu
+              - cell "Sin teléfono" [ref=e380]
+              - cell "TEACHER" [ref=e381]
+              - cell [ref=e383]:
+                - generic [ref=e384]:
+                  - code [ref=e385]: DOC-102
+                  - text: • Ciencias de la Computaci├│n
+              - cell "ACTIVE" [ref=e386]
+              - cell "14/10/2026" [ref=e389]
+              - cell [ref=e390]:
+                - generic [ref=e391]:
+                  - button " Suspender" [ref=e392] [cursor=pointer]:
+                    - generic [ref=e393]: 
+                    - text: Suspender
+                  - button " Editar" [ref=e394] [cursor=pointer]:
+                    - generic [ref=e395]: 
+                    - text: Editar
+                  - button "" [ref=e396] [cursor=pointer]
+            - row [ref=e398]:
+              - cell [ref=e399]:
+                - code [ref=e400]: "#2"
+              - cell "Carlos Mendoza prof.carlos@nexus.edu" [ref=e401]:
+                - generic [ref=e402]: Carlos Mendoza
+                - text: prof.carlos@nexus.edu
+              - cell "Sin teléfono" [ref=e403]
+              - cell "TEACHER" [ref=e404]
+              - cell [ref=e406]:
+                - generic [ref=e407]:
+                  - code [ref=e408]: DOC-101
+                  - text: • Ingenier├¡a de Software & Ciberseguridad
+              - cell "ACTIVE" [ref=e409]
+              - cell "14/10/2026" [ref=e412]
+              - cell [ref=e413]:
+                - generic [ref=e414]:
+                  - button " Suspender" [ref=e415] [cursor=pointer]:
+                    - generic [ref=e416]: 
+                    - text: Suspender
+                  - button " Editar" [ref=e417] [cursor=pointer]:
+                    - generic [ref=e418]: 
+                    - text: Editar
+                  - button "" [ref=e419] [cursor=pointer]
+      - text:  
+  - text:                   
+  - generic [ref=e421]:
+    - generic [ref=e422]: 
+    - generic [ref=e423]: ¡Bienvenido/a, Master!
+  - contentinfo [ref=e77]:
+    - generic [ref=e78]:
+      - generic [ref=e79]:
+        - generic [ref=e80]: 
+        - generic [ref=e81]: NexusAcademic Enterprise • Sistema Integral de Gestión Académica & Asistencia QR
+      - paragraph [ref=e82]: © 2026 NexusAcademic Platform. Diseñado con Vanilla CSS Glassmorphism, SQLite Transaccional & Node.js ES Modules.

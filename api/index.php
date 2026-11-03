@@ -26,13 +26,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Global Exception Handler returning standardized JSON
 set_exception_handler(function (Throwable $e) {
-    http_response_code($e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500);
+    $rawCode = $e->getCode();
+    $statusCode = (is_numeric($rawCode) && (int)$rawCode >= 400 && (int)$rawCode < 600) ? (int)$rawCode : 500;
+    http_response_code($statusCode);
+
+    $isDebug = defined('APP_DEBUG') && APP_DEBUG === true;
+    $safeMessage = ($statusCode >= 500 && !$isDebug)
+        ? 'Se produjo un error interno en el servidor. Intente nuevamente.'
+        : $e->getMessage();
+
     echo json_encode([
         'success' => false,
         'error'   => 'INTERNAL_SERVER_ERROR',
-        'message' => $e->getMessage()
+        'message' => $safeMessage
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
+});
+
+// Universal PSR-4 Autoloader for NexusAcademic Namespace
+spl_autoload_register(function (string $class): void {
+    $prefix = 'NexusAcademic\\';
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return;
+    }
+    $relativeClass = substr($class, $len);
+    $parts = explode('\\', $relativeClass);
+    $baseDir = __DIR__ . '/../src/';
+
+    // 1. Direct match: src/Controllers/DevController.php
+    $file = $baseDir . str_replace('\\', '/', $relativeClass) . '.php';
+    if (file_exists($file)) {
+        require_once $file;
+        return;
+    }
+
+    // 2. Folder casing fallback (e.g., controllers/DevController.php)
+    if (count($parts) === 2) {
+        $folderVariations = [strtolower($parts[0]), ucfirst(strtolower($parts[0]))];
+        foreach ($folderVariations as $f) {
+            $candidate = $baseDir . $f . '/' . $parts[1] . '.php';
+            if (file_exists($candidate)) {
+                require_once $candidate;
+                return;
+            }
+        }
+    }
 });
 
 // Require Configuration & Database
@@ -45,12 +84,12 @@ require_once __DIR__ . '/../src/Core/Request.php';
 require_once __DIR__ . '/../src/Core/Router.php';
 
 // Require Services & Models
-require_once __DIR__ . '/../src/Services/CryptoService.php';
-require_once __DIR__ . '/../src/Services/GradeService.php';
-require_once __DIR__ . '/../src/Services/AuthService.php';
-require_once __DIR__ . '/../src/Services/AcademicService.php';
-require_once __DIR__ . '/../src/Services/AttendanceService.php';
-require_once __DIR__ . '/../src/Services/AuditService.php';
+require_once __DIR__ . '/../src/services/CryptoService.php';
+require_once __DIR__ . '/../src/services/GradeService.php';
+require_once __DIR__ . '/../src/services/AuthService.php';
+require_once __DIR__ . '/../src/services/AcademicService.php';
+require_once __DIR__ . '/../src/services/AttendanceService.php';
+require_once __DIR__ . '/../src/services/AuditService.php';
 
 require_once __DIR__ . '/../src/Models/UserModel.php';
 require_once __DIR__ . '/../src/Models/AcademicModel.php';
@@ -59,16 +98,17 @@ require_once __DIR__ . '/../src/Models/GradeModel.php';
 require_once __DIR__ . '/../src/Models/AuditModel.php';
 
 // Require Middlewares
-require_once __DIR__ . '/../src/Middleware/AuthMiddleware.php';
-require_once __DIR__ . '/../src/Middleware/RbacMiddleware.php';
-require_once __DIR__ . '/../src/Middleware/RateLimitMiddleware.php';
+require_once __DIR__ . '/../src/middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../src/middleware/RbacMiddleware.php';
+require_once __DIR__ . '/../src/middleware/RateLimitMiddleware.php';
 
 // Require Controllers
-require_once __DIR__ . '/../src/Controllers/AuthController.php';
-require_once __DIR__ . '/../src/Controllers/AcademicController.php';
-require_once __DIR__ . '/../src/Controllers/AttendanceController.php';
-require_once __DIR__ . '/../src/Controllers/GradeController.php';
-require_once __DIR__ . '/../src/Controllers/AuditController.php';
+require_once __DIR__ . '/../src/controllers/AuthController.php';
+require_once __DIR__ . '/../src/controllers/AcademicController.php';
+require_once __DIR__ . '/../src/controllers/AttendanceController.php';
+require_once __DIR__ . '/../src/controllers/GradeController.php';
+require_once __DIR__ . '/../src/controllers/AuditController.php';
+require_once __DIR__ . '/../src/controllers/DevController.php';
 
 use NexusAcademic\Core\Request;
 use NexusAcademic\Core\Router;

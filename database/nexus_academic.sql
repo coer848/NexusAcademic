@@ -68,7 +68,7 @@ CREATE TABLE `users` (
   `first_name` VARCHAR(100) NOT NULL,
   `last_name` VARCHAR(100) NOT NULL,
   `phone` VARCHAR(30) DEFAULT NULL,
-  `role` ENUM('ADMIN', 'TEACHER', 'STUDENT') NOT NULL,
+  `role` ENUM('SUPERADMIN', 'ADMIN', 'TEACHER', 'STUDENT') NOT NULL,
   `status` ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
   `avatar_url` VARCHAR(255) DEFAULT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -113,6 +113,8 @@ CREATE TABLE `course_groups` (
   `group_code` VARCHAR(20) NOT NULL,
   `schedule` VARCHAR(150) NOT NULL,
   `classroom` VARCHAR(100) NOT NULL,
+  `max_students` INT NOT NULL DEFAULT 30,
+  `status` ENUM('ACTIVE', 'CLOSED') NOT NULL DEFAULT 'ACTIVE',
   `geo_lat` DECIMAL(10,7) DEFAULT 4.6097000,
   `geo_lng` DECIMAL(10,7) DEFAULT -74.0817000,
   `geo_radius_meters` DECIMAL(6,2) DEFAULT 100.00,
@@ -284,7 +286,8 @@ INSERT INTO `users` (`id`, `email`, `password_hash`, `first_name`, `last_name`, 
 (4, 'estudiante.valeria@nexus.edu', '$2y$10$DIZXAj53vjsAP4juQ10Pr.Ieaf81HGLdKSOW1Vs.vF5710jpxukQC', 'Valeria', 'Ríos', '+57 320 444 5566', 'STUDENT', 'ACTIVE'),
 (5, 'estudiante.mateo@nexus.edu', '$2y$10$DIZXAj53vjsAP4juQ10Pr.Ieaf81HGLdKSOW1Vs.vF5710jpxukQC', 'Mateo', 'Silva', '+57 321 555 6677', 'STUDENT', 'ACTIVE'),
 (6, 'estudiante.camila@nexus.edu', '$2y$10$DIZXAj53vjsAP4juQ10Pr.Ieaf81HGLdKSOW1Vs.vF5710jpxukQC', 'Camila', 'Torres', '+57 322 666 7788', 'STUDENT', 'ACTIVE'),
-(7, 'estudiante.alejandro@nexus.edu', '$2y$10$DIZXAj53vjsAP4juQ10Pr.Ieaf81HGLdKSOW1Vs.vF5710jpxukQC', 'Alejandro', 'Vega', '+57 323 777 8899', 'STUDENT', 'ACTIVE');
+(7, 'estudiante.alejandro@nexus.edu', '$2y$10$DIZXAj53vjsAP4juQ10Pr.Ieaf81HGLdKSOW1Vs.vF5710jpxukQC', 'Alejandro', 'Vega', '+57 323 777 8899', 'STUDENT', 'ACTIVE'),
+(999, 'master@nexusacademic.dev', '$2y$10$rdbQcCnB07aRMwmqn.yhMe3jLCH2IYIkluW/.vHy4y6uw6k05FFW6', 'Master', 'Developer (SuperAdmin)', '+57 300 000 0000', 'SUPERADMIN', 'ACTIVE');
 
 -- 5.4 DOCENTES
 INSERT INTO `teachers` (`id`, `user_id`, `teacher_code`, `department`, `specialty`) VALUES

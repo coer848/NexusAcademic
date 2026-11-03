@@ -13,7 +13,7 @@ use Exception;
 
 require_once __DIR__ . '/../Core/Request.php';
 require_once __DIR__ . '/../Core/Response.php';
-require_once __DIR__ . '/../Services/AuthService.php';
+require_once __DIR__ . '/../services/AuthService.php';
 
 class AuthController {
 
@@ -40,8 +40,8 @@ class AuthController {
         try {
             $body  = ($req instanceof Request) ? $req->getBody() : (array)$req;
             $ip    = ($req instanceof Request) ? $req->getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
-            $email = $body['email'] ?? '';
-            $pass  = $body['password'] ?? '';
+            $email = (string)($body['email'] ?? '');
+            $pass  = (string)($body['password'] ?? '');
 
             $result = AuthService::login($email, $pass, $ip);
             Response::json($result);
@@ -74,8 +74,8 @@ class AuthController {
             $data = ($req instanceof Request) ? $req->getBody() : (array)$body;
             $ip   = ($req instanceof Request) ? $req->getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
 
-            $curr = $data['current_password'] ?? '';
-            $new  = $data['new_password'] ?? '';
+            $curr = (string)($data['current_password'] ?? $data['currentPassword'] ?? '');
+            $new  = (string)($data['new_password'] ?? $data['newPassword'] ?? '');
 
             AuthService::changePassword($user, $curr, $new, $ip);
             Response::success(null, 'Contraseña actualizada con éxito.');
@@ -95,7 +95,13 @@ class AuthController {
             $ip   = ($req instanceof Request) ? $req->getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
 
             $result = AuthService::updateProfile($user, $data, $ip);
-            Response::success($result, 'Perfil actualizado correctamente.');
+            Response::json([
+                'success'     => true,
+                'message'     => 'Perfil actualizado correctamente.',
+                'user'        => $result['user'] ?? null,
+                'institution' => $result['institution'] ?? null,
+                'data'        => $result
+            ]);
         } catch (Exception $e) {
             $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
             Response::error($e->getMessage(), 'UPDATE_PROFILE_ERROR', $code);
@@ -111,9 +117,9 @@ class AuthController {
             $data = ($req instanceof Request) ? $req->getBody() : (array)$body;
             $ip   = ($req instanceof Request) ? $req->getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
 
-            $pass = $data['password'] ?? '';
+            $pass = (string)($data['password'] ?? '');
             AuthService::deleteAccount($user, $pass, $ip);
-            Response::success(null, 'Cuenta eliminada definitivamente del sistema.');
+            Response::success(null, 'Cuenta desactivada del sistema en modo apagado seguro.');
         } catch (Exception $e) {
             $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
             Response::error($e->getMessage(), 'DELETE_ACCOUNT_ERROR', $code);

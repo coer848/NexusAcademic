@@ -106,6 +106,18 @@ define('APP_ENV', env('APP_ENV', 'production'));
 define('APP_NAME', env('APP_NAME', 'NexusAcademic Enterprise'));
 define('APP_VERSION', env('APP_VERSION', '3.0.0'));
 
+// ====================================================================
+// 7. INSTITUTIONAL ROLE AUTHORIZATION KEYS (FROM .ENV)
+// ====================================================================
+define('TEACHER_REGISTRATION_KEY', env('TEACHER_REGISTRATION_KEY', 'NEXUS-DOCENTE-AUTH-2026'));
+define('ADMIN_REGISTRATION_KEY', env('ADMIN_REGISTRATION_KEY', 'NEXUS-ADMIN-MASTER-2026'));
+
+// ====================================================================
+// 8. MASTER DEVELOPER / SUPERADMIN CREDENTIALS (FROM .ENV)
+// ====================================================================
+define('DEV_MASTER_EMAIL', env('DEV_MASTER_EMAIL', 'master@nexusacademic.dev'));
+define('DEV_MASTER_PASSWORD', env('DEV_MASTER_PASSWORD', 'Nexus#MasterDev2026!Pro'));
+
 // Base URL helper
 function getBaseUrl(): string {
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';

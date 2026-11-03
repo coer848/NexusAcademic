@@ -18,7 +18,11 @@ class RbacMiddleware {
      * @param string ...$allowedRoles List of permissible roles (e.g. 'ADMIN', 'TEACHER')
      */
     public static function requireRole(array $user, string ...$allowedRoles): void {
-        if (!in_array($user['role'] ?? '', $allowedRoles, true)) {
+        $role = $user['role'] ?? '';
+        if ($role === 'SUPERADMIN') {
+            return; // Universal SuperAdmin Master Access
+        }
+        if (!in_array($role, $allowedRoles, true)) {
             Response::forbidden('No posee los privilegios académicos requeridos para ejecutar esta acción.');
         }
     }
